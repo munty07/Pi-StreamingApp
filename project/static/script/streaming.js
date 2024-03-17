@@ -36,7 +36,7 @@ window.onload = function () {
         // Check if an img already exists in the videoContainer
         if (videoContainer.getElementsByTagName('img').length === 0) {
             var img = document.createElement('img');
-            img.src = "{{ url_for('video_feed') }}";
+            img.src = videoFeedUrl; // in html code
             img.alt = "Live Stream";
             img.onload = function () {
                 spinner.style.display = 'none';
