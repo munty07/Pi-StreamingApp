@@ -52,6 +52,18 @@ window.onload = function () {
     };
 
     // Capture the video image
+    // captureButton.onclick = function () {
+    //     resetZoomMode();
+    //     var videoElement = document.querySelector("#videoContainer img");
+    //     var canvas = document.createElement("canvas");
+    //     canvas.width = videoElement.width;
+    //     canvas.height = videoElement.height;
+    //     var ctx = canvas.getContext("2d");
+    //     ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    //     var dataURL = canvas.toDataURL("image/png");
+    //     downloadImage(dataURL, 'capture.png');
+    // };
+
     captureButton.onclick = function () {
         resetZoomMode();
         var videoElement = document.querySelector("#videoContainer img");
@@ -61,7 +73,28 @@ window.onload = function () {
         var ctx = canvas.getContext("2d");
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
         var dataURL = canvas.toDataURL("image/png");
-        downloadImage(dataURL, 'capture.png');
+
+        // Ask user if they want to save the image to cloud or not
+        var saveToCloud = confirm("Do you want to save the image to the cloud?");
+        if (saveToCloud) {
+            // Send the dataURL to the server using fetch API
+            fetch('/upload_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: dataURL }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message); // Alert the response from Flask
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        } else {
+            downloadImage(dataURL, 'capture.png');
+        }
     };
 
     // Zoom in

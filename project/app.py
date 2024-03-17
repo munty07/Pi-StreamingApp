@@ -1,8 +1,13 @@
-from flask import Flask, session, render_template, request, redirect, url_for, Response
+from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify
 import pyrebase
 import cv2
 from dotenv import load_dotenv
 import os
+import base64
+from io import BytesIO
+from PIL import Image
+import uuid
+from datetime import datetime
 
 # Load environment variables from .env
 load_dotenv() 
@@ -23,6 +28,7 @@ config ={
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
 db = firebase.database()
+storage = firebase.storage()
 
 # register page
 @app.route('/register', methods=['POST'])
@@ -41,6 +47,7 @@ def register():
     except:
         return 'Failed to register'
 
+
 # login page
 @app.route('/', methods=['POST', 'GET'])
 def index():
@@ -51,12 +58,12 @@ def index():
         password = request.form.get('password')
         try:
             user = auth.sign_in_with_email_and_password(email, password)
-            # Aici presupunem că ai acces direct la structura bazei de date pentru a extrage username-ul
+            session['user_id'] = user['localId'] 
             all_users = db.child("Users").get()
             for user in all_users.each():
                 if user.val().get("email") == email:
                     session['user'] = email
-                    session['username'] = user.val().get("username")  # Presupunând că 'username' există
+                    session['username'] = user.val().get("username")  
                     break
             return redirect(url_for('home'))
         except:
@@ -123,6 +130,43 @@ def gen_frames():
 @app.route('/streaming')
 def streaming():
     return render_template('streaming.html')
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'user' not in session:
+        return jsonify({"error": "User not authenticated"}), 403  
+
+    user_id = session['user_id']
+    data = request.get_json()
+    image_data = data['image']
+    image_data = base64.b64decode(image_data.split(',')[1])
+    image = Image.open(BytesIO(image_data))
+
+    # Generate a unique identifier for this capture
+    unique_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    unique_filename = f"{user_id}_{timestamp}.png"
+    temp_path = f"temp_{unique_filename}"
+    image.save(temp_path)
+
+    # Specify the folder in Firebase Storage and upload the file
+    storage_path = f"LiveCaptures/{user_id}/{unique_filename}"
+    storage.child(storage_path).put(temp_path)
+    file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
+
+    # Store metadata in Realtime Database under the structured path
+    db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).set({
+        "details": {
+            "timestamp": timestamp,
+            "size":  f"{file_size_in_mb:.2f} MB",
+            "filename": unique_filename,
+            "storage_path": storage_path
+        }
+    })
+    # Clean up the temporary file
+    os.remove(temp_path)
+    return jsonify({"message": "Image uploaded successfully to Firebase Storage and details stored in Realtime Database."})
+
 
 # logout function
 @app.route('/logout')
