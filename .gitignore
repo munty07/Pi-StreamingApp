@@ -161,3 +161,9 @@ cython_debug/
 
 # just for test
 __Tutorial__/
+
+#
+node_modules/
+opencv/
+package-lock.json
+package.json
