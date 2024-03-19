@@ -167,3 +167,4 @@ node_modules/
 opencv/
 package-lock.json
 package.json
+cors.json
