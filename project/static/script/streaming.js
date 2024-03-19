@@ -1,12 +1,3 @@
-function downloadImage(dataUrl, filename) {
-    var a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
 window.onload = function () {
     var cameraStarted = false;
     var zoomLevel = 1;
@@ -32,7 +23,6 @@ window.onload = function () {
         var spinner = document.getElementById("spinner");
         spinner.style.display = 'block';
 
-
         // Check if an img already exists in the videoContainer
         if (videoContainer.getElementsByTagName('img').length === 0) {
             var img = document.createElement('img');
@@ -51,21 +41,9 @@ window.onload = function () {
         }
     };
 
-    // Capture the video image
-    // captureButton.onclick = function () {
-    //     resetZoomMode();
-    //     var videoElement = document.querySelector("#videoContainer img");
-    //     var canvas = document.createElement("canvas");
-    //     canvas.width = videoElement.width;
-    //     canvas.height = videoElement.height;
-    //     var ctx = canvas.getContext("2d");
-    //     ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    //     var dataURL = canvas.toDataURL("image/png");
-    //     downloadImage(dataURL, 'capture.png');
-    // };
-
     captureButton.onclick = function () {
         resetZoomMode();
+        spinner.style.display = 'block';
         var videoElement = document.querySelector("#videoContainer img");
         var canvas = document.createElement("canvas");
         canvas.width = videoElement.width;
@@ -74,27 +52,34 @@ window.onload = function () {
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
         var dataURL = canvas.toDataURL("image/png");
 
-        // Ask user if they want to save the image to cloud or not
-        var saveToCloud = confirm("Do you want to save the image to the cloud?");
-        if (saveToCloud) {
-            // Send the dataURL to the server using fetch API
-            fetch('/upload_image', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: dataURL }),
+        fetch('/upload_image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: dataURL }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                document.getElementById("successMessage").innerText = data.message;
+                var successModal = document.getElementById("successModal");
+                successModal.style.display = "block";
+
+                var closeSuccess = document.getElementsByClassName("close-success")[0];
+                closeSuccess.onclick = function () {
+                    successModal.style.display = "none";
+                }
+
+                window.onclick = function (event) {
+                    if (event.target == successModal) {
+                        successModal.style.display = "none";
+                    }
+                }
             })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.message); // Alert the response from Flask
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-        } else {
-            downloadImage(dataURL, 'capture.png');
-        }
+            .catch((error) => {
+                console.error('Error:', error);
+            });
     };
 
     // Zoom in
@@ -155,12 +140,18 @@ window.onload = function () {
         video.style.transform = "scale(" + zoomLevel + ")";
     }
 
-    function downloadImage(dataUrl, filename) {
-        var a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
+    // function downloadImage(dataUrl, filename) {
+    //     var a = document.createElement('a');
+    //     a.href = dataUrl;
+    //     a.download = filename;
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     document.body.removeChild(a);
+    // }
+
+    document.getElementById('viewInGalleryBtn').addEventListener('click', function () {
+        localStorage.setItem('autoShowLiveCaptures', 'true');
+        window.location.href = storageUrl;
+    });
+
 };
