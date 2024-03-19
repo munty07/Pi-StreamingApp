@@ -145,6 +145,7 @@ def upload_image():
     # Generate a unique identifier for this capture
     unique_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
     unique_filename = f"{user_id}_{timestamp}.png"
     temp_path = f"temp_{unique_filename}"
     image.save(temp_path)
@@ -157,7 +158,7 @@ def upload_image():
     # Store metadata in Realtime Database under the structured path
     db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).set({
         "details": {
-            "timestamp": timestamp,
+            "timestamp": date_time,
             "size":  f"{file_size_in_mb:.2f} MB",
             "filename": unique_filename,
             "storage_path": storage_path
@@ -166,6 +167,40 @@ def upload_image():
     # Clean up the temporary file
     os.remove(temp_path)
     return jsonify({"message": "Image uploaded successfully to Firebase Storage and details stored in Realtime Database."})
+
+
+
+# storage
+@app.route('/storage')
+def storage_page():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('storage.html')
+
+@app.route('/get_images')
+def get_images():
+    if 'user' not in session:
+        return jsonify([])  
+
+    user_id = session['user_id']
+    images_details = db.child("UserCaptures").child("LiveCaptures").child(user_id).get()
+
+    images = [] 
+    if images_details.val():
+        for image in images_details.each():
+            image_data = image.val()['details']
+            storage_path = image_data['storage_path']
+            size = image_data.get('size', 'N/A')  
+            timestamp = image_data.get('timestamp', 'N/A')  
+            url = storage.child(storage_path).get_url(None)
+            images.append({
+                'url': url,
+                'size': size,
+                'timestamp': timestamp
+            })
+
+    return jsonify(images)
 
 
 # logout function
