@@ -1,5 +1,14 @@
 $(document).ready(function () {
+    if (localStorage.getItem('autoShowLiveCaptures') === 'true') {
+        localStorage.setItem('autoShowLiveCaptures', 'false');
+        loadCaptures();
+    }
+
     $('#liveCapturesBtn').click(function () {
+        loadCaptures();
+    });
+
+    function loadCaptures() {
         $.ajax({
             url: '/get_images',
             type: 'GET',
@@ -22,11 +31,6 @@ $(document).ready(function () {
                     imagesContainer.append(imgHtml);
                 });
 
-                // $('.preview-btn').on('click', function() {
-                //     var imageSrc = $(this).data('imgsrc');
-                //     showPreview(imageSrc);
-                // });
-
                 $('.clickable').on('click', function () {
                     var imageSrc = $(this).data('imgsrc');
                     showPreview(imageSrc);
@@ -36,7 +40,7 @@ $(document).ready(function () {
                 alert('Error loading images.');
             }
         });
-    });
+    }
 
     $('#preview-overlay, .close-preview').click(function () {
         $('#preview-overlay').hide();
