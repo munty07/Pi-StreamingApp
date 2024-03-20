@@ -8,6 +8,8 @@ from io import BytesIO
 from PIL import Image
 import uuid
 from datetime import datetime
+from werkzeug.utils import secure_filename
+from moviepy.editor import VideoFileClip
 
 # Load environment variables from .env
 load_dotenv() 
@@ -168,6 +170,63 @@ def upload_image():
     os.remove(temp_path)
     return jsonify({"message": "Image uploaded successfully to Firebase Storage and details stored in Realtime Database."})
 
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload_video', methods=['POST'])
+def upload_video():
+    if 'user' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+
+    if 'video' not in request.files:
+        return jsonify({"error": "No video part"}), 400
+
+    video_file = request.files['video']
+    if video_file.filename == '':
+        return jsonify({"error": "No selected video"}), 400
+
+    # Asigură-te că fișierul este un videoclip (validare simplă pe baza extensiei)
+    if not allowed_file(video_file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+    unique_id = str(uuid.uuid4())
+    filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
+
+    # Salvarea temporară și încărcarea pe Firebase
+    temp_path = f"temp_{filename}"
+    video_file.save(temp_path)
+
+    # Utilizează MoviePy pentru a afla durata videoclipului
+    # with VideoFileClip(temp_path) as video:
+    #     duration = video.duration  # Durata în secunde
+
+    storage_path = f"LiveRecordings/{user_id}/{filename}"
+    storage.child(storage_path).put(temp_path)
+    file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
+
+    # Adaugă informațiile în Firebase Realtime Database, inclusiv durata
+    db.child("UserCaptures").child("LiveRecordings").child(user_id).child(unique_id).set({
+        "details": {
+            "timestamp": date_time,
+            "size":  f"{file_size_in_mb:.2f} MB",
+            "filename": filename,
+            "storage_path": storage_path
+            # ,
+            # "duration": f"{duration:.2f} seconds"  # Adaugă durata aici
+        }
+    })
+
+    # Șterge fișierul temporar
+    os.remove(temp_path)
+
+    return jsonify({"message": "Video uploaded successfully"})
 
 
 # storage

@@ -13,10 +13,13 @@
     <div id="videoContainer"></div>
     <div id="spinner">
         <img src="../static/img/load.gif" alt="Loading..."> 
+        <video autoplay playsinline></video> 
+        <img id="pauseImage" style="display:none;">
     </div>
     <div class="controls">
-        <button id="playButton" class="btn"><i class="fas fa-play"></i> Play </button>
+        <button id="pauseButton" class="btn"><i class="fas fa-pause"></i> Pause </button>
         <button id="captureButton" class="btn"><i class="fas fa-camera"></i> Capture </button>
+        <button id="recordButton" class="btn"><i class="fas fa-video"></i> Record </button>
         <button id="zoomInButton" class="btn"><i class="fas fa-search-plus"></i> Zoom In </button>
         <button id="zoomOutButton" class="btn"><i class="fas fa-search-minus"></i> Zoom Out </button>
     </div>
