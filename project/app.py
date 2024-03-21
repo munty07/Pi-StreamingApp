@@ -261,6 +261,30 @@ def get_images():
 
     return jsonify(images)
 
+@app.route('/get_videos')
+def get_videos():
+    if 'user' not in session:
+        return jsonify([])  
+
+    user_id = session['user_id']
+    video_details = db.child("UserCaptures").child("LiveRecordings").child(user_id).get()
+
+    videos = [] 
+    if video_details.val():
+        for video in video_details.each():
+            video_data = video.val()['details']
+            storage_path = video_data['storage_path']
+            size = video_data.get('size', 'N/A')  
+            timestamp = video_data.get('timestamp', 'N/A')  
+            url = storage.child(storage_path).get_url(None)
+            videos.append({
+                'url': url,
+                'size': size,
+                'timestamp': timestamp
+            })
+
+    return jsonify(videos)
+
 
 # logout function
 @app.route('/logout')

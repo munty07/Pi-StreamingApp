@@ -49,27 +49,6 @@ window.onload = function () {
         }
     });
 
-    // Load and display video
-    playButton.onclick = function () {
-        playButton.classList.remove("playButtonPulse");
-        var spinner = document.getElementById("spinner");
-        spinner.style.display = 'block';
-
-        // Check if an img already exists in the videoContainer
-        if (videoContainer.getElementsByTagName('img').length === 0) {
-            var img = document.createElement('img');
-            img.src = videoFeedUrl; // in html code
-            img.alt = "Live Stream";
-            img.onload = function () {
-                spinner.style.display = 'none';
-            };
-            videoContainer.appendChild(img);
-            cameraStarted = true;
-        } else {
-            spinner.style.display = 'none';
-        }
-    };
-
     captureButton.onclick = function () {
         resetZoomMode();
         spinner.style.display = 'block';
@@ -105,8 +84,8 @@ window.onload = function () {
             .then(response => response.json())
             .then(data => {
                 spinner.style.display = 'none';
-                document.getElementById("successMessage").innerText = data.message;
-                var successModal = document.getElementById("successModal");
+                document.getElementById("successMessageCapture").innerText = data.message;
+                var successModal = document.getElementById("successModalCapture");
                 successModal.style.display = "block";
 
                 var closeSuccess = document.getElementsByClassName("close-success")[0];
@@ -193,7 +172,7 @@ window.onload = function () {
     //     document.body.removeChild(a);
     // }
 
-    document.getElementById('viewInGalleryBtn').addEventListener('click', function () {
+    document.getElementById('viewCapturesBtn').addEventListener('click', function () {
         localStorage.setItem('autoShowLiveCaptures', 'true');
         window.location.href = storageUrl;
     });
@@ -287,8 +266,32 @@ window.onload = function () {
             body: formData
         })
             .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error('Error uploading video:', error));
+            .then(data => {
+                spinner.style.display = 'none';
+                document.getElementById("successMessageRecord").innerText = data.message;
+                var successModal = document.getElementById("successModalRecord");
+                successModal.style.display = "block";
+
+                var closeSuccess = document.getElementsByClassName("close-success")[0];
+                closeSuccess.onclick = function () {
+                    successModal.style.display = "none";
+                };
+
+                window.onclick = function (event) {
+                    if (event.target == successModal) {
+                        successModal.style.display = "none";
+                    }
+                };
+            })
+            .catch((error) => {
+                console.error('Error uploading video:', error);
+                spinner.style.display = 'none';
+            });
     }
+
+    document.getElementById('viewRecordsBtn').addEventListener('click', function () {
+        localStorage.setItem('autoShowLiveRecordings', 'true');
+        window.location.href = storageUrl;
+    });
 
 };
