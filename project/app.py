@@ -1,8 +1,15 @@
-from flask import Flask, session, render_template, request, redirect, url_for, Response
+from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify
 import pyrebase
 import cv2
 from dotenv import load_dotenv
 import os
+import base64
+from io import BytesIO
+from PIL import Image
+import uuid
+from datetime import datetime
+from werkzeug.utils import secure_filename
+from moviepy.editor import VideoFileClip
 
 # Load environment variables from .env
 load_dotenv() 
@@ -23,6 +30,7 @@ config ={
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
 db = firebase.database()
+storage = firebase.storage()
 
 # register page
 @app.route('/register', methods=['POST'])
@@ -41,6 +49,7 @@ def register():
     except:
         return 'Failed to register'
 
+
 # login page
 @app.route('/', methods=['POST', 'GET'])
 def index():
@@ -51,12 +60,12 @@ def index():
         password = request.form.get('password')
         try:
             user = auth.sign_in_with_email_and_password(email, password)
-            # Aici presupunem că ai acces direct la structura bazei de date pentru a extrage username-ul
+            session['user_id'] = user['localId'] 
             all_users = db.child("Users").get()
             for user in all_users.each():
                 if user.val().get("email") == email:
                     session['user'] = email
-                    session['username'] = user.val().get("username")  # Presupunând că 'username' există
+                    session['username'] = user.val().get("username")  
                     break
             return redirect(url_for('home'))
         except:
@@ -123,6 +132,188 @@ def gen_frames():
 @app.route('/streaming')
 def streaming():
     return render_template('streaming.html')
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'user' not in session:
+        return jsonify({"error": "User not authenticated"}), 403  
+
+    user_id = session['user_id']
+    data = request.get_json()
+    image_data = data['image']
+    image_data = base64.b64decode(image_data.split(',')[1])
+    image = Image.open(BytesIO(image_data))
+
+    # Generate a unique identifier for this capture
+    unique_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+    unique_filename = f"{user_id}_{timestamp}.png"
+    temp_path = f"temp_{unique_filename}"
+    image.save(temp_path)
+
+    # Specify the folder in Firebase Storage and upload the file
+    storage_path = f"LiveCaptures/{user_id}/{unique_filename}"
+    storage.child(storage_path).put(temp_path)
+    file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
+
+    # Store metadata in Realtime Database under the structured path
+    db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).set({
+        "details": {
+            "timestamp": date_time,
+            "size":  f"{file_size_in_mb:.2f} MB",
+            "filename": unique_filename,
+            "storage_path": storage_path
+        }
+    })
+    # Clean up the temporary file
+    os.remove(temp_path)
+    return jsonify({"message": "Image uploaded successfully to Firebase Storage and details stored in Realtime Database."})
+
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload_video', methods=['POST'])
+def upload_video():
+    if 'user' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+
+    if 'video' not in request.files:
+        return jsonify({"error": "No video part"}), 400
+
+    video_file = request.files['video']
+    if video_file.filename == '':
+        return jsonify({"error": "No selected video"}), 400
+
+    # Asigură-te că fișierul este un videoclip (validare simplă pe baza extensiei)
+    if not allowed_file(video_file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+    unique_id = str(uuid.uuid4())
+    filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
+
+    # Salvarea temporară și încărcarea pe Firebase
+    temp_path = f"temp_{filename}"
+    video_file.save(temp_path)
+
+    # Utilizează MoviePy pentru a afla durata videoclipului
+    # with VideoFileClip(temp_path) as video:
+    #     duration = video.duration  # Durata în secunde
+
+    storage_path = f"LiveRecordings/{user_id}/{filename}"
+    storage.child(storage_path).put(temp_path)
+    file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
+
+    # Adaugă informațiile în Firebase Realtime Database, inclusiv durata
+    db.child("UserCaptures").child("LiveRecordings").child(user_id).child(unique_id).set({
+        "details": {
+            "timestamp": date_time,
+            "size":  f"{file_size_in_mb:.2f} MB",
+            "filename": filename,
+            "storage_path": storage_path
+            # ,
+            # "duration": f"{duration:.2f} seconds"  # Adaugă durata aici
+        }
+    })
+
+    # Șterge fișierul temporar
+    os.remove(temp_path)
+
+    return jsonify({"message": "Video uploaded successfully"})
+
+
+# storage
+@app.route('/storage')
+def storage_page():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('storage.html')
+
+@app.route('/get_images')
+def get_images():
+    if 'user' not in session:
+        return jsonify([])  
+
+    user_id = session['user_id']
+    selected_date = request.args.get('date', '')
+    images_details = db.child("UserCaptures").child("LiveCaptures").child(user_id).get()
+
+    images = [] 
+    if images_details.val():
+        for image in images_details.each():
+            image_data = image.val()['details']
+            storage_path = image_data['storage_path']
+            size = image_data.get('size', 'N/A')  
+            timestamp = image_data.get('timestamp', 'N/A') 
+            try:
+                image_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+            except ValueError:
+                continue 
+
+            url = storage.child(storage_path).get_url(None)
+
+            if selected_date:
+                if image_date == selected_date:
+                    images.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp
+                    })
+            else:
+                images.append({
+                    'url': url,
+                    'size': size,
+                    'timestamp': timestamp
+                })
+
+    return jsonify(images)
+
+@app.route('/get_videos')
+def get_videos():
+    if 'user' not in session:
+        return jsonify([])  
+
+    user_id = session['user_id']
+    selected_date = request.args.get('date', '')
+    video_details = db.child("UserCaptures").child("LiveRecordings").child(user_id).get()
+
+    videos = [] 
+    if video_details.val():
+        for video in video_details.each():
+            video_data = video.val()['details']
+            storage_path = video_data['storage_path']
+            size = video_data.get('size', 'N/A')  
+            timestamp = video_data.get('timestamp', 'N/A')  
+            try:
+                video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+            except ValueError:
+                continue 
+
+            url = storage.child(storage_path).get_url(None)
+            if selected_date:
+                if video_date == selected_date:
+                    videos.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp
+                    })
+            else:
+                videos.append({
+                    'url': url,
+                    'size': size,
+                    'timestamp': timestamp
+                })
+
+    return jsonify(videos)
+
 
 # logout function
 @app.route('/logout')
