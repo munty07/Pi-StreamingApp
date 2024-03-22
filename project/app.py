@@ -243,6 +243,7 @@ def get_images():
         return jsonify([])  
 
     user_id = session['user_id']
+    selected_date = request.args.get('date', '')
     images_details = db.child("UserCaptures").child("LiveCaptures").child(user_id).get()
 
     images = [] 
@@ -251,13 +252,27 @@ def get_images():
             image_data = image.val()['details']
             storage_path = image_data['storage_path']
             size = image_data.get('size', 'N/A')  
-            timestamp = image_data.get('timestamp', 'N/A')  
+            timestamp = image_data.get('timestamp', 'N/A') 
+            try:
+                image_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+            except ValueError:
+                continue 
+
             url = storage.child(storage_path).get_url(None)
-            images.append({
-                'url': url,
-                'size': size,
-                'timestamp': timestamp
-            })
+
+            if selected_date:
+                if image_date == selected_date:
+                    images.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp
+                    })
+            else:
+                images.append({
+                    'url': url,
+                    'size': size,
+                    'timestamp': timestamp
+                })
 
     return jsonify(images)
 
@@ -267,6 +282,7 @@ def get_videos():
         return jsonify([])  
 
     user_id = session['user_id']
+    selected_date = request.args.get('date', '')
     video_details = db.child("UserCaptures").child("LiveRecordings").child(user_id).get()
 
     videos = [] 
@@ -276,12 +292,25 @@ def get_videos():
             storage_path = video_data['storage_path']
             size = video_data.get('size', 'N/A')  
             timestamp = video_data.get('timestamp', 'N/A')  
+            try:
+                video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+            except ValueError:
+                continue 
+
             url = storage.child(storage_path).get_url(None)
-            videos.append({
-                'url': url,
-                'size': size,
-                'timestamp': timestamp
-            })
+            if selected_date:
+                if video_date == selected_date:
+                    videos.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp
+                    })
+            else:
+                videos.append({
+                    'url': url,
+                    'size': size,
+                    'timestamp': timestamp
+                })
 
     return jsonify(videos)
 

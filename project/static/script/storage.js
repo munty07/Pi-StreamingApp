@@ -1,4 +1,9 @@
 $(document).ready(function () {
+    $('#dateFilter').change(function () {
+        // loadCaptures($(this).val());
+        loadRecordings($(this).val()); //todo
+    });
+    // IMAGES
     if (localStorage.getItem('autoShowLiveCaptures') === 'true') {
         localStorage.setItem('autoShowLiveCaptures', 'false');
         loadCaptures();
@@ -8,9 +13,10 @@ $(document).ready(function () {
         loadCaptures();
     });
 
-    function loadCaptures() {
+    function loadCaptures(selectedDate = '') {
         $.ajax({
             url: '/get_images',
+            data: { date: selectedDate },
             type: 'GET',
             success: function (response) {
                 var imagesContainer = $('#imagesContainer');
@@ -20,6 +26,12 @@ $(document).ready(function () {
                 if (response.length === 0) {//there are no video recordings
                     messageContainer.append('<div class="text-center no-data"><i class="fas fa-images" aria-hidden="true"></i><p>No photos available.</p></div>');
                 } else {
+                    messageContainer.empty();
+                    response.sort(function (a, b) {//order by date desc
+                        var dateA = new Date(a.timestamp), dateB = new Date(b.timestamp);
+                        return dateB - dateA;
+                    });
+
                     response.forEach(function (image) {
                         var imgHtml = `
                             <div class="col-md-4 image-card">
@@ -58,9 +70,10 @@ $(document).ready(function () {
         loadRecordings();
     });
 
-    function loadRecordings() {
+    function loadRecordings(selectedDate = '') {
         $.ajax({
             url: '/get_videos',
+            data: { date: selectedDate },
             type: 'GET',
             success: function (response) {
                 var imagesContainer = $('#imagesContainer');
@@ -71,6 +84,10 @@ $(document).ready(function () {
                     messageContainer.append('<div class="text-center no-data"><i class="fas fa-video-slash" aria-hidden="true"></i><p>No recordings available.</p></div>');
                 } else {
                     messageContainer.empty();
+                    response.sort(function (a, b) {//order by date desc
+                        var dateA = new Date(a.timestamp), dateB = new Date(b.timestamp);
+                        return dateB - dateA;
+                    });
                     response.forEach(function (video) {
                         var videoHtml = `
                             <div class="col-md-4 video-card">

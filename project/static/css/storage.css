@@ -102,3 +102,10 @@ body {
 .no-data p {
     font-size: 20px; /* Ajustează conform preferințelor */
 }
+
+/* FILTER BY DATE */
+#dateFilter{
+    background-color: #c72f62;
+    border-color: #ff2770;
+    color: #fff;
+}
