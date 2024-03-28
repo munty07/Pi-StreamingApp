@@ -88,7 +88,7 @@ window.onload = function () {
                 var successModal = document.getElementById("successModalCapture");
                 successModal.style.display = "block";
 
-                var closeSuccess = document.getElementsByClassName("close-success")[0];
+                var closeSuccess = document.getElementsByClassName("close-success-captures")[0];
                 closeSuccess.onclick = function () {
                     successModal.style.display = "none";
                 };
@@ -179,7 +179,7 @@ window.onload = function () {
 
 
     // LIVE RECORDINGS
-    var recordButton = document.getElementById("recordButton");
+    var recordingButton = document.getElementById("recordingButton");
     var recording = false;
     var recordedBlobs;
     var mediaRecorder;
@@ -201,15 +201,15 @@ window.onload = function () {
             console.error("Error accessing media devices.", err);
         });
 
-    recordButton.onclick = function () {
+    recordingButton.onclick = function () {
         if (window.stream) {
             if (recording) {
                 stopRecording();
-                recordButton.textContent = 'Start Recording';
+                recordingButton.textContent = 'Start Recording';
                 recording = false;
             } else {
                 startRecording();
-                recordButton.textContent = 'Stop Recording';
+                recordingButton.textContent = 'Stop Recording';
                 recording = true;
             }
         } else {
@@ -268,11 +268,11 @@ window.onload = function () {
             .then(response => response.json())
             .then(data => {
                 spinner.style.display = 'none';
-                document.getElementById("successMessageRecord").innerText = data.message;
-                var successModal = document.getElementById("successModalRecord");
+                document.getElementById("successMessageRecording").innerText = data.message;
+                var successModal = document.getElementById("successModalRecording");
                 successModal.style.display = "block";
 
-                var closeSuccess = document.getElementsByClassName("close-success")[0];
+                var closeSuccess = document.getElementsByClassName("close-success-recordings")[0];
                 closeSuccess.onclick = function () {
                     successModal.style.display = "none";
                 };
@@ -289,7 +289,7 @@ window.onload = function () {
             });
     }
 
-    document.getElementById('viewRecordsBtn').addEventListener('click', function () {
+    document.getElementById('viewRecordingsBtn').addEventListener('click', function () {
         localStorage.setItem('autoShowLiveRecordings', 'true');
         window.location.href = storageUrl;
     });

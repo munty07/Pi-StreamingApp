@@ -161,6 +161,11 @@ cython_debug/
 
 # just for test
 __Tutorial__/
+testProject/
+
+project/Scripts/
+project/pyvenv.cfg
+project/share/
 
 #
 node_modules/

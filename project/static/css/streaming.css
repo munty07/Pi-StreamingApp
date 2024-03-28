@@ -120,15 +120,18 @@ h2{
     color: #fff ;
 }
 
-.close-success {
+.close-success-captures,
+.close-success-recordings{
     color: #fff;
     float: right;
     font-size: 28px;
     font-weight: bold;
 }
 
-.close-success:hover,
-.close-success:focus {
+.close-success-captures:hover,
+.close-success-captures:focus,
+.close-success-recordings:hover,
+.close-success-recordings:focus {
     color: #ff2770;
     text-decoration: none;
     cursor: pointer;

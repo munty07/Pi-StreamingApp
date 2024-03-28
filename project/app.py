@@ -168,7 +168,7 @@ def upload_image():
     })
     # Clean up the temporary file
     os.remove(temp_path)
-    return jsonify({"message": "Image uploaded successfully to Firebase Storage and details stored in Realtime Database."})
+    return jsonify({"message": "The image has been successfully saved!"})
 
 
 def allowed_file(filename):
@@ -226,7 +226,7 @@ def upload_video():
     # Șterge fișierul temporar
     os.remove(temp_path)
 
-    return jsonify({"message": "Video uploaded successfully"})
+    return jsonify({"message": "The recording has been successfully saved!"})
 
 
 # storage
@@ -259,19 +259,24 @@ def get_images():
                 continue 
 
             url = storage.child(storage_path).get_url(None)
+            unique_id = image.key()
 
             if selected_date:
                 if image_date == selected_date:
                     images.append({
                         'url': url,
                         'size': size,
-                        'timestamp': timestamp
+                        'timestamp': timestamp,
+                        'unique_id': unique_id,
+                        'storage_path': storage_path
                     })
             else:
                 images.append({
                     'url': url,
                     'size': size,
-                    'timestamp': timestamp
+                    'timestamp': timestamp,
+                    'unique_id': unique_id,
+                    'storage_path': storage_path
                 })
 
     return jsonify(images)
@@ -313,6 +318,26 @@ def get_videos():
                 })
 
     return jsonify(videos)
+
+
+# delete image
+@app.route('/delete_image', methods=['POST'])
+def delete_image():
+    if 'user' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 403
+
+    data = request.get_json()
+    user_id = session['user_id']
+    unique_id = data.get('unique_id')
+    #storage_path = data.get('storage_path')
+
+    try:
+        #storage.child(storage_path).delete(storage_path)
+        db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).remove()
+
+        return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
 
 
 # logout function
