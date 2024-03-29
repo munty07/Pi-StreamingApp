@@ -33,21 +33,26 @@ db = firebase.database()
 storage = firebase.storage()
 
 # register page
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['POST','GET'])
 def register():
-    regUsername = request.form['regUsername']
-    regEmail = request.form['regEmail']
-    regPassword = request.form['regPassword']
-    regAddress = request.form['regAddress']
+    if request.method == 'POST':
+        regUsername = request.form['regUsername']
+        regEmail = request.form['regEmail']
+        regPassword = request.form['regPassword']
+        regPhone = request.form['regPhone']
 
-    try:
-        user = auth.create_user_with_email_and_password(regEmail, regPassword)
-        uid = user['localId']
-        data = {"username": regUsername, "email": regEmail, "address": regAddress}
-        db.child("Users").child(uid).set(data)
-        return redirect(url_for('index'))  
-    except:
-        return 'Failed to register'
+        try:
+            user = auth.create_user_with_email_and_password(regEmail, regPassword)
+            uid = user['localId']
+            data = {"username": regUsername, "email": regEmail, "phone": regPhone}
+            db.child("Users").child(uid).set(data)
+            return redirect(url_for('index'))  
+        except:
+            register_message = 'An account with this email address already exists. Please use a different email.'
+            alert_class = 'danger'
+            return render_template('login.html', register_message=register_message, register_alert_class=alert_class)
+
+    return render_template('login.html') 
 
 
 # login page
@@ -69,9 +74,11 @@ def index():
                     break
             return redirect(url_for('home'))
         except:
-            return 'Failed to login'
-    return render_template('login.html')
+            login_message = 'Incorrect email or password. Please try again.'
+            alert_class = 'danger'
+            return render_template('login.html', login_message=login_message, login_alert_class=alert_class)
 
+    return render_template('login.html')
 
 # home page
 @app.route('/home')

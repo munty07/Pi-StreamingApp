@@ -12,7 +12,21 @@ body {
 	flex-direction: column;
 	font-family: 'Montserrat', sans-serif;
 	height: 100vh;
-	margin: -20px 0 50px;
+	margin: 0px;
+}
+
+.alert-danger {
+    background-color: #e2054f; 
+    border-color: #d43f3a;
+    color: #fff; 
+}
+.alert {
+    border-radius: 5px; 
+    padding: 10px; 
+    position: relative; 
+    top: -30px;
+	width: 300px;
+	font-size: 13px;
 }
 
 h1 {
