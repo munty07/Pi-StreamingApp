@@ -29,6 +29,28 @@ body {
 	font-size: 13px;
 }
 
+.error {
+    border-color: #d43f3a !important;
+    color: #d43f3a !important;
+}
+
+.error-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+	font-size: 13px;
+    cursor: pointer; 
+	right: -20px;
+}
+
+.error-icon i {
+    color: #d43f3a;
+    font-size: 1.2em;
+}
+
+
+
 h1 {
 	font-weight: bold;
 	margin: 0;
@@ -128,7 +150,7 @@ form {
 
 .input-box input:focus ~ label,
 .input-box label.active{
-	bottom: 30px;
+	bottom: 22px;
     font-size: 13px;
     color: #ff2770;
 }

@@ -1,4 +1,4 @@
-from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify
+from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify, flash
 import pyrebase
 import cv2
 from dotenv import load_dotenv
@@ -10,6 +10,9 @@ import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip
+import re #regex
+from wtforms import Form, StringField, PasswordField, validators
+from email_validator import validate_email, EmailNotValidError
 
 # Load environment variables from .env
 load_dotenv() 
@@ -32,27 +35,74 @@ auth = firebase.auth()
 db = firebase.database()
 storage = firebase.storage()
 
-# register page
-@app.route('/register', methods=['POST','GET'])
+class RegistrationForm(Form):
+    regUsername = StringField('Username', [validators.Length(min=4, max=25)])
+    regEmail = StringField('Email Address', [validators.Email()])
+    regPassword = PasswordField('Password', [
+        validators.DataRequired(),
+        validators.EqualTo('confirm', message='Passwords do not match')
+    ])
+    regPhone = StringField('Phone', [
+        validators.Regexp(r'^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$',
+                          message="Invalid phone number format. Please use a valid format.")
+    ])
+    confirm = PasswordField('Repeat Password')
+
+# Ruta pentru înregistrare
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        regUsername = request.form['regUsername']
-        regEmail = request.form['regEmail']
-        regPassword = request.form['regPassword']
-        regPhone = request.form['regPhone']
+    form = RegistrationForm(request.form)
+    
+    if request.method == 'POST' and form.validate():
+        regUsername = form.regUsername.data
+        regEmail = form.regEmail.data
+        regPassword = form.regPassword.data
+        regPhone = form.regPhone.data  
 
         try:
+            # Validare suplimentară pentru email, deși deja se face în WTForms
+            if not form.regEmail.data or not form.regEmail.data.strip():
+                raise ValueError('Invalid email address.')
+
+            # Dacă totul este în regulă, creează utilizatorul
             user = auth.create_user_with_email_and_password(regEmail, regPassword)
             uid = user['localId']
             data = {"username": regUsername, "email": regEmail, "phone": regPhone}
             db.child("Users").child(uid).set(data)
-            return redirect(url_for('index'))  
-        except:
-            register_message = 'An account with this email address already exists. Please use a different email.'
-            alert_class = 'danger'
-            return render_template('login.html', register_message=register_message, register_alert_class=alert_class)
 
-    return render_template('login.html') 
+            flash('Account created successfully! Please log in.', 'success')
+            return jsonify({'success': True, 'redirect': url_for('login')})
+        except Exception as e:
+            flash('An error occurred. Please try again later.', 'danger')
+            print(e) 
+
+            return jsonify({'success': False, 'message': 'An error occurred. Please try again later.'})
+
+    # Returnează răspunsul AJAX pentru validările din formular
+    errors = {field.name: field.errors for field in form}
+    return jsonify({'success': False, 'errors': errors})
+
+# register page
+# @app.route('/register', methods=['POST','GET'])
+# def register():
+#     if request.method == 'POST':
+#         regUsername = request.form['regUsername']
+#         regEmail = request.form['regEmail']
+#         regPassword = request.form['regPassword']
+#         regPhone = request.form['regPhone']
+
+#         try:
+#             user = auth.create_user_with_email_and_password(regEmail, regPassword)
+#             uid = user['localId']
+#             data = {"username": regUsername, "email": regEmail, "phone": regPhone}
+#             db.child("Users").child(uid).set(data)
+#             return redirect(url_for('index'))  
+#         except:
+#             register_message = 'An account with this email address already exists. Please use a different email.'
+#             alert_class = 'danger'
+#             return render_template('login.html', register_message=register_message, register_alert_class=alert_class)
+
+#     return render_template('login.html') 
 
 
 # login page
