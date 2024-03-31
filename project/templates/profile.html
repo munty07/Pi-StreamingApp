@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="shortcut icon" href="../static/img/logo.png" type="x-icon" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="../static/css/profile.css">
+   
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="user-info">
+                <span>{{ username }}</span>
+                <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a>
+            </div>
+        </div>
+        <div class="profile-info">
+            <h1>User Profile</h1>
+            <div class="user-details">
+                <p><strong>Username:</strong> <span id="profile-username">{{ user.username }}</span></p>
+                <p><strong>Email:</strong> <span id="profile-email">{{ user.email }}</span></p>
+                <p><strong>Phone:</strong> <span id="profile-phone">{{ user.phone }}</span></p>
+            </div>
+        </div>
+
+        <div class="container">
+        <h1>User Profile</h1>
+        <form id="updateForm">
+            <div class="input-box">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="{{ username }}">
+            </div>
+            <div class="input-box">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ user.email }}">
+            </div>
+            <div class="input-box">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" name="phone" value="{{ user.phone }}">
+            </div>
+            <div id="updateMessage" class="message"></div>
+            <button type="submit">Update Profile</button>
+        </form>
+    </div>
+  
+    </div>
+    <script>
+       $(document).ready(function() {
+    $('#updateForm').submit(function(e) {
+        e.preventDefault();
+
+        // Preia datele din formular
+        var username = $('#username').val();
+        var email = $('#email').val();
+        var phone = $('#phone').val();
+
+        // Trimite datele către ruta de actualizare a profilului
+        $.ajax({
+            url: '/update_profile',
+            type: 'POST',
+            data: {
+                username: username,
+                email: email,
+                phone: phone
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#updateMessage').html('<div class="success-message">' + response.message + '</div>');
+                    // Actualizează datele afișate în interfață
+                    updateProfileDetails(username, email, phone);
+
+                } else {
+                    $('#updateMessage').html('<div class="error-message">' + response.message + '</div>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(error);
+                $('#updateMessage').html('<div class="error-message">An error occurred. Please try again later.</div>');
+            }
+        });
+
+        function updateProfileDetails(username, email, phone) {
+        $('#profile-username').text(username);
+        $('#profile-email').text(email);
+        $('#profile-phone').text(phone);
+    }
+    });
+});
+
+    </script>
+</body>
+</html>

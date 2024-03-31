@@ -90,6 +90,7 @@ def index():
 
     return render_template('login.html', login_message=login_message, login_alert_class=alert_class)
 
+
 #######################################################################
 ############################# HOME PAGE ############################### 
 #######################################################################
@@ -365,6 +366,83 @@ def delete_image():
         return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
+
+
+#######################################################################
+############################ PROFILE PAGE ############################# 
+#######################################################################
+@app.route('/profile')
+def profile():
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
+    user_email = session['user']
+    user_data = None
+
+    all_users = db.child("Users").get()
+    for user in all_users.each():
+        if user.val().get("email") == user_email:
+            user_data = user.val()
+            break
+
+    if user_data is None:
+        flash('User data not found.', 'danger')
+        return redirect(url_for('index'))
+
+    return render_template('profile.html', username=user_data['username'], user=user_data)
+
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        flash('You must be logged in to update your profile.', 'danger')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    username = request.form.get('username')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+
+    try:
+        db.child("Users").child(user_id).update({
+            'username': username,
+            'email': email,
+            'phone': phone
+        })
+
+        # Mesaj de succes
+        success_message = "Profile updated successfully!"
+
+        # Răspunsul către client
+        return jsonify({'success': True, 'message': success_message})
+
+    except Exception as e:
+        # În caz de eroare, returnează un mesaj de eroare
+        error_message = str(e)
+        return jsonify({'success': False, 'message': error_message})
+
+    # Verificăm dacă utilizatorul există în baza de date
+    # user_ref = db.child("Users").child(user_id)
+    # user_info = user_ref.get().val()
+
+    # if user_info is None:
+    #     flash('User data not found.', 'danger')
+    #     return redirect(url_for('index'))
+
+    # # Actualizăm informațiile utilizatorului
+    # updated_data = {
+    #     "username": username,
+    #     "email": email,
+    #     "phone": phone
+    # }
+
+    # try:
+    #     return jsonify({'success': True, 'message': 'Profile updated successfully!', 'user': updated_data})
+
+    # except Exception as e:
+    #     flash('An error occurred while updating profile. Please try again.', 'danger')
+    #     print(e)
+
+    return redirect(url_for('profile'))
 
 
 # logout function
