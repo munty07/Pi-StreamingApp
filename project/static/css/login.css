@@ -12,8 +12,53 @@ body {
 	flex-direction: column;
 	font-family: 'Montserrat', sans-serif;
 	height: 100vh;
-	margin: -20px 0 50px;
+	margin: 0px;
 }
+
+.alert-danger {
+    background-color: #e2054f; 
+    border-color: #d43f3a;
+    color: #fff; 
+}
+.alert {
+    border-radius: 5px; 
+    padding: 10px; 
+    position: relative; 
+    top: -30px;
+	width: 300px;
+	font-size: 13px;
+}
+
+.error {
+    border-color: #d43f3a !important;
+    color: #d43f3a !important;
+}
+
+.error-icon {
+    position: absolute;
+    top:30%;
+    transform: translateY(-50%);
+    display: none;
+	font-size: 13px;
+    cursor: pointer; 
+	right: -20px;
+}
+
+.error-icon i {
+    color: #d43f3a;
+    font-size: 1.2em;
+}
+
+.password-toggle{
+	position: absolute;
+	top: 30%;
+	transform: translateY(-50%);
+	font-size: 13px;
+	cursor: pointer; 
+	right: 0px;
+	color:#ff2770
+}
+
 
 h1 {
 	font-weight: bold;
@@ -114,7 +159,7 @@ form {
 
 .input-box input:focus ~ label,
 .input-box label.active{
-	bottom: 30px;
+	bottom: 22px;
     font-size: 13px;
     color: #ff2770;
 }
@@ -190,8 +235,6 @@ form {
 
 .overlay {
 	background: #c72f62;
-	/* background: -webkit-linear-gradient(to right, #c72f62, #ff2770); */
-	/* background: linear-gradient(to right, #c72f62, #ff2770); */
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: 0 0;
