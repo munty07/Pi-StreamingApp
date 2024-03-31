@@ -9,10 +9,10 @@ from PIL import Image
 import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from moviepy.editor import VideoFileClip
-import re #regex
-from wtforms import Form, StringField, PasswordField, validators
-from email_validator import validate_email, EmailNotValidError
+# from moviepy.editor import VideoFileClip
+# import re #regex
+# from wtforms import Form, StringField, PasswordField, validators
+# from email_validator import validate_email, EmailNotValidError
 
 # Load environment variables from .env
 load_dotenv() 
@@ -35,81 +35,41 @@ auth = firebase.auth()
 db = firebase.database()
 storage = firebase.storage()
 
-class RegistrationForm(Form):
-    regUsername = StringField('Username', [validators.Length(min=4, max=25)])
-    regEmail = StringField('Email Address', [validators.Email()])
-    regPassword = PasswordField('Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords do not match')
-    ])
-    regPhone = StringField('Phone', [
-        validators.Regexp(r'^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$',
-                          message="Invalid phone number format. Please use a valid format.")
-    ])
-    confirm = PasswordField('Repeat Password')
-
-# Ruta pentru înregistrare
+#######################################################################
+############################ REGISTER PAGE ############################ 
+#######################################################################
 @app.route('/register', methods=['POST'])
 def register():
-    form = RegistrationForm(request.form)
-    
-    if request.method == 'POST' and form.validate():
-        regUsername = form.regUsername.data
-        regEmail = form.regEmail.data
-        regPassword = form.regPassword.data
-        regPhone = form.regPhone.data  
+    regUsername = request.form['regUsername'].strip()
+    regEmail = request.form['regEmail'].strip()
+    regPassword = request.form['regPassword'].strip()
+    regPhone = request.form['regPhone'].strip()
 
-        try:
-            # Validare suplimentară pentru email, deși deja se face în WTForms
-            if not form.regEmail.data or not form.regEmail.data.strip():
-                raise ValueError('Invalid email address.')
+    try:
+        user = auth.create_user_with_email_and_password(regEmail, regPassword)
+        uid = user['localId']
+        data = {"username": regUsername, "email": regEmail, "phone": regPhone}
+        db.child("Users").child(uid).set(data)
 
-            # Dacă totul este în regulă, creează utilizatorul
-            user = auth.create_user_with_email_and_password(regEmail, regPassword)
-            uid = user['localId']
-            data = {"username": regUsername, "email": regEmail, "phone": regPhone}
-            db.child("Users").child(uid).set(data)
+        flash('Account created successfully! Please log in.', 'success')
+        return jsonify({'success': True, 'redirect': url_for('index')})
+    except Exception as e:
+        flash('An account with this email address already exists. Please use a different email.', 'danger')
+        print(e)
 
-            flash('Account created successfully! Please log in.', 'success')
-            return jsonify({'success': True, 'redirect': url_for('login')})
-        except Exception as e:
-            flash('An error occurred. Please try again later.', 'danger')
-            print(e) 
+        return jsonify({'success': False, 'message': 'An account with this email address already exists. Please use a different email.'})
 
-            return jsonify({'success': False, 'message': 'An error occurred. Please try again later.'})
-
-    # Returnează răspunsul AJAX pentru validările din formular
-    errors = {field.name: field.errors for field in form}
-    return jsonify({'success': False, 'errors': errors})
-
-# register page
-# @app.route('/register', methods=['POST','GET'])
-# def register():
-#     if request.method == 'POST':
-#         regUsername = request.form['regUsername']
-#         regEmail = request.form['regEmail']
-#         regPassword = request.form['regPassword']
-#         regPhone = request.form['regPhone']
-
-#         try:
-#             user = auth.create_user_with_email_and_password(regEmail, regPassword)
-#             uid = user['localId']
-#             data = {"username": regUsername, "email": regEmail, "phone": regPhone}
-#             db.child("Users").child(uid).set(data)
-#             return redirect(url_for('index'))  
-#         except:
-#             register_message = 'An account with this email address already exists. Please use a different email.'
-#             alert_class = 'danger'
-#             return render_template('login.html', register_message=register_message, register_alert_class=alert_class)
-
-#     return render_template('login.html') 
-
-
-# login page
+#######################################################################
+############################# LOGIN PAGE ############################## 
+#######################################################################
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if 'user' in session:
         return redirect(url_for('home')) 
+
+    login_message = None
+    alert_class = None
+
     if request.method == "POST":
         email = request.form.get('email')
         password = request.form.get('password')
@@ -121,16 +81,18 @@ def index():
                 if user.val().get("email") == email:
                     session['user'] = email
                     session['username'] = user.val().get("username")  
-                    break
-            return redirect(url_for('home'))
+                    return redirect(url_for('home'))  
+            login_message = 'Incorrect email or password. Please try again.'
+            alert_class = 'danger'
         except:
             login_message = 'Incorrect email or password. Please try again.'
             alert_class = 'danger'
-            return render_template('login.html', login_message=login_message, login_alert_class=alert_class)
 
-    return render_template('login.html')
+    return render_template('login.html', login_message=login_message, login_alert_class=alert_class)
 
-# home page
+#######################################################################
+############################# HOME PAGE ############################### 
+#######################################################################
 @app.route('/home')
 def home():
     if 'user' in session:
@@ -139,7 +101,9 @@ def home():
     else:
         return redirect(url_for('index'))
 
-# reset password page
+#######################################################################
+##################### RESET PASSWORD PAGE ############################# 
+#######################################################################
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
     if request.method == 'POST':
@@ -169,13 +133,15 @@ def reset_password():
     alert_class = session.pop('alert_class', 'info')
     return render_template('reset_password.html', message=message, alert_class=alert_class)
 
-# streaming page
+#######################################################################
+########################### STREAMING PAGE ############################ 
+#######################################################################
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def gen_frames():
-    camera = cv2.VideoCapture(0)  # Use 0 for web camera
+    camera = cv2.VideoCapture(0)  # 0 for web camera
     while True:
         success, frame = camera.read()
         if not success:
@@ -188,8 +154,14 @@ def gen_frames():
 
 @app.route('/streaming')
 def streaming():
-    return render_template('streaming.html')
+    if 'user' in session:
+        return render_template('streaming.html')
+    else:
+        return redirect(url_for('index'))
 
+#######################################################################
+############################ STORAGE PAGE ############################# 
+#######################################################################
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
     if 'user' not in session:
@@ -247,7 +219,6 @@ def upload_video():
     if video_file.filename == '':
         return jsonify({"error": "No selected video"}), 400
 
-    # Asigură-te că fișierul este un videoclip (validare simplă pe baza extensiei)
     if not allowed_file(video_file.filename):
         return jsonify({"error": "Invalid file type"}), 400
 
@@ -268,7 +239,6 @@ def upload_video():
     storage.child(storage_path).put(temp_path)
     file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
 
-    # Adaugă informațiile în Firebase Realtime Database, inclusiv durata
     db.child("UserCaptures").child("LiveRecordings").child(user_id).child(unique_id).set({
         "details": {
             "timestamp": date_time,
@@ -289,10 +259,10 @@ def upload_video():
 # storage
 @app.route('/storage')
 def storage_page():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    
-    return render_template('storage.html')
+    if 'user' in session:
+        return render_template('storage.html')
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/get_images')
 def get_images():

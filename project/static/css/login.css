@@ -36,7 +36,7 @@ body {
 
 .error-icon {
     position: absolute;
-    top: 50%;
+    top:30%;
     transform: translateY(-50%);
     display: none;
 	font-size: 13px;
@@ -49,6 +49,15 @@ body {
     font-size: 1.2em;
 }
 
+.password-toggle{
+	position: absolute;
+	top: 30%;
+	transform: translateY(-50%);
+	font-size: 13px;
+	cursor: pointer; 
+	right: 0px;
+	color:#ff2770
+}
 
 
 h1 {
@@ -226,8 +235,6 @@ form {
 
 .overlay {
 	background: #c72f62;
-	/* background: -webkit-linear-gradient(to right, #c72f62, #ff2770); */
-	/* background: linear-gradient(to right, #c72f62, #ff2770); */
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: 0 0;

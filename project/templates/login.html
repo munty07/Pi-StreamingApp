@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="../static/css/login.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-	    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="shortcut icon" href="../static/img/logo.png" type="x-icon" />
     <title>Login</title>
@@ -16,21 +15,6 @@
 			<form action="/register" id="registerForm" method="POST">
 				<h1>Create Account</h1>
 				<br><br>
-				<!-- {% if register_message %}
-				<div class="alert alert-{{ register_alert_class }} mt-3" id="registerErrorMessage" role="alert">
-					{{ register_message }}
-				</div>
-				{% endif %}				 -->
-				<!-- {% with messages = get_flashed_messages(with_categories=true) %}
-					{% if messages %}
-						{% for category, message in messages %}
-						<div class="alert alert-{{ category }}">
-							{{ message }}
-						</div>
-						{% endfor %}
-					{% endif %}
-				{% endwith %} -->
-
 				<div id="registerErrors"></div>
 
 				<div class="input-box">
@@ -46,11 +30,17 @@
 				<div class="input-box">
 					<input type="password" name="regPassword" id="regPassword" required/>
 					<label for="regPassword">Password</label>
+					<span class="password-toggle" data-target="regPassword">
+						<i class="fas fa-eye"></i>
+					</span>
 					<span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
 				</div>
 				<div class="input-box">
 					<input type="password" name="regConfirmPassword" id="regConfirmPassword" required/>
 					<label for="regConfirmPassword">Confirm Password</label>
+					<span class="password-toggle" data-target="regConfirmPassword">
+						<i class="fas fa-eye"></i>
+					</span>
 					<span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
 				</div>
 				<div class="input-box">
@@ -72,12 +62,15 @@
 				</div>
 				{% endif %}
 				<div class="input-box">
-					<input type="email" name="email" id="email" required/>
+					<input type="email" name="email" id="email" value="{{ request.form.email if request.form.email }}" required/>
 					<label for="email">Email</label>
 				</div>
 				<div class="input-box">
-					<input type="password" name="password" id="password" required />
+					<input type="password" name="password" id="password" value="{{ request.form.password if request.form.password }}" required />
 					<label for="password">Password</label>
+					<span class="password-toggle" data-target="password">
+						<i class="fas fa-eye"></i>
+					</span>
 				</div>
 				<a href="/reset_password">Forgot your password?</a>
 				<button type="submit">Sign In</button>
@@ -100,145 +93,5 @@
 	</div>
 
 	<script src="../static/script/login.js"></script>
-	<script>
-		$(document).ready(function() {
-			let lettersRegex = /^[a-zA-Z -]*$/;//letter, line and space 
-			let mailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-			let phoneRegex = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
-			let passRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,}$/;
-
-			$('#regUsername').on('input', function() {
-				let regUsername = $(this).val().trim();
-				let errorIcon = $(this).closest('.input-box').find('.error-icon');
-
-				if (!lettersRegex.test(regUsername)) {
-					errorIcon.show();
-					errorIcon.attr('title', 'Username must contain only letters, hyphens, and spaces.');
-					$(this).addClass('error');
-				} else {
-					errorIcon.hide();
-					errorIcon.removeAttr('title');
-					$(this).removeClass('error');
-				}
-			});
-
-			$('#regEmail').on('input', function() {
-				let regEmail = $(this).val().trim();
-				let errorIcon = $(this).closest('.input-box').find('.error-icon');
-
-				if (!mailRegex.test(regEmail)) {
-					errorIcon.show();
-					errorIcon.attr('title', 'Invalid email address.');
-					$(this).addClass('error');
-				} else {
-					errorIcon.hide();
-					errorIcon.removeAttr('title');
-					$(this).removeClass('error');
-				}
-			});
-
-			$('#regPassword').on('input', function() {
-				let regPassword = $(this).val().trim();
-				let errorIcon = $(this).closest('.input-box').find('.error-icon');
-
-				if (!passRegex.test(regPassword)) {
-					errorIcon.show();
-					errorIcon.attr('title', 'Password must be at least 6 characters long, containing at least one letter, one number, and one special character.');
-					$(this).addClass('error');
-				} else {
-					errorIcon.hide();
-					errorIcon.removeAttr('title');
-					$(this).removeClass('error');
-				}
-			});
-
-			$('#regConfirmPassword').on('input', function() {
-				let regConfirmPassword = $(this).val().trim();
-				let regPassword = $('#regPassword').val().trim();
-				let errorIcon = $(this).closest('.input-box').find('.error-icon');
-
-				if (regPassword !== regConfirmPassword) {
-					errorIcon.show();
-					errorIcon.attr('title', 'Password does not match.');
-					$(this).addClass('error');
-				} else {
-					errorIcon.hide();
-					errorIcon.removeAttr('title');
-					$(this).removeClass('error');
-				}
-			});
-
-			$('#regPhone').on('input', function() {
-				let regPhone = $(this).val().trim();
-				let errorIcon = $(this).closest('.input-box').find('.error-icon');
-
-				if (!phoneRegex.test(regPhone)) {
-					errorIcon.show();
-					errorIcon.attr('title', 'Invalid phone number format.');
-					$(this).addClass('error');
-				} else {
-					errorIcon.hide();
-					errorIcon.removeAttr('title');
-					$(this).removeClass('error');
-				}
-			});
-
-			$('#registerForm input').on('input', function() {
-				let anyErrorVisible = false;
-
-				$('.error-icon').each(function() {
-					if ($(this).css('display') === 'block') {
-						anyErrorVisible = true;
-						return false;
-					}
-				});
-
-				console.log("Error: " + anyErrorVisible);
-
-				if (anyErrorVisible) {
-					$('#btnRegister').prop('disabled', true);
-					$('#btnRegister').css('cursor', 'not-allowed');
-					$('#btnRegister').attr('title', 'Please fill in the form with valid data.');
-				} else {
-					$('#btnRegister').prop('disabled', false);
-					$('#btnRegister').css('cursor', 'pointer');
-					$('#btnRegister').removeAttr('title');
-				}
-			});
-
-
-			$('#registerForm').submit(function(e) {
-				e.preventDefault();
-				
-				$.ajax({
-					url: '/register',
-					type: 'POST',
-					data: $(this).serialize(),
-					success: function(response) {
-						if (response.success) {
-							// Dacă înregistrarea a fost un succes, redirecționează către pagina de login
-							window.location.href = response.redirect;
-						} else {
-							// Dacă există erori de validare, afișează mesajele de eroare
-							let errors = response.errors;
-							let errorHtml = '<ul>';
-
-							for (let field in errors) {
-								for (let i = 0; i < errors[field].length; i++) {
-									errorHtml += '<li>' + errors[field][i] + '</li>';
-								}
-							}
-
-							errorHtml += '</ul>';
-							$('#registerErrors').html(errorHtml);
-						}
-					},
-					error: function(xhr, status, error) {
-						console.error(error);
-					}
-				});
-			});
-		});
-	</script>
 </body>
 </html>
