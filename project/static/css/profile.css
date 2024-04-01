@@ -68,12 +68,41 @@ h1{
     text-align: center;
 }
 
-.user-details {
-    margin-top: 20px;
+.user-avatar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
 }
 
-.user-details p {
+.user-avatar img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 10px;
+}
+
+.info-item .col {
+    flex: 1;
+}
+
+.info-item label {
+    margin-right: 10px;
+}
+
+.info-item .edit-icon {
+    color: var(--color-button);
+    cursor: pointer;
 }
 
 .btn-save,
@@ -96,3 +125,32 @@ h1{
     margin-top: 10px;
     color: var(--color-text);
 }
+
+/* restul stilurilor rămân la fel */
+
+.save-icon,
+.cancel-icon {
+    color: var(--color-text);
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.save-icon:hover,
+.cancel-icon:hover {
+    color: var(--color-button-hover);
+}
+
+/* restul stilurilor rămân la fel */
+
+.editable-active {
+    border: 1px solid var(--color-border);
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    min-width: 100px;
+    display: inline-block;
+}
+

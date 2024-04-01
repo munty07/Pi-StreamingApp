@@ -11,108 +11,197 @@
    
 </head>
 <body>
-    <div class="top-bar">
-        <div class="user-info">
-            <span>{{ username }}</span>
-            <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="profile-info">
-            <h1>User Profile</h1>
-            <a href="#" id="editProfileBtn"><i class="fas fa-user-edit"></i>Edit Profile</a>
-            <div class="user-details">
-                <p><strong>Username:</strong> <span id="profile-username" contenteditable="false">{{ user.username }}</span></p>
-                <p><strong>Email:</strong> <span id="profile-email" contenteditable="false">{{ user.email }}</span></p>
-                <p><strong>Phone:</strong> <span id="profile-phone" contenteditable="false">{{ user.phone }}</span></p>
+    <body>
+        <!-- <div class="top-bar">
+            <div class="user-info">
+                <span>{{ username }}</span>
+                <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a>
             </div>
-            <button id="saveProfileBtn" class="btn-save" style="display: none;">Save Profile</button>
-            <button id="cancelEditBtn" class="btn-cancel" style="display: none;">Cancel</button>
-            <div id="updateMessage" class="message"></div>
         </div>
-    </div>
+    
+        <div class="container">
+            <div class="profile-info">
+                <div class="user-avatar">
+                    <img src="../static/img/avatar.jpg" alt="User Avatar">
+                </div>
+                <h2>{{ username }}</h2>
+                <div class="user-details">
+                    <div class="info-item">
+                        <div class="col">
+                            <label for="profile-username">Username:</label>
+                        </div>
+                        <div class="col">
+                            <span id="profile-username">{{ user.username }}</span>
+                            <input type="text" id="edit-profile-username" class="edit-field" style="display: none;">
+                        </div>
+                        <div class="col">
+                            <i class="fas fa-pencil-alt edit-icon" data-field="username"></i>
+                            <i class="fas fa-save save-icon" data-field="username" style="display: none;"></i>
+                            <i class="fas fa-times cancel-icon" data-field="username" style="display: none;"></i>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="col">
+                            <label for="profile-email">Email:</label>
+                        </div>
+                        <div class="col">
+                            <span id="profile-email">{{ user.email }}</span>
+                            <input type="text" id="edit-profile-email" class="edit-field" style="display: none;">
+                        </div>
+                        <div class="col">
+                            <i class="fas fa-pencil-alt edit-icon" data-field="email"></i>
+                            <i class="fas fa-save save-icon" data-field="email" style="display: none;"></i>
+                            <i class="fas fa-times cancel-icon" data-field="email" style="display: none;"></i>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="col">
+                            <label for="profile-phone">Phone:</label>
+                        </div>
+                        <div class="col">
+                            <span id="profile-phone">{{ user.phone }}</span>
+                            <input type="text" id="edit-profile-phone" class="edit-field" style="display: none;">
+                        </div>
+                        <div class="col">
+                            <i class="fas fa-pencil-alt edit-icon" data-field="phone"></i>
+                            <i class="fas fa-save save-icon" data-field="phone" style="display: none;"></i>
+                            <i class="fas fa-times cancel-icon" data-field="phone" style="display: none;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+     
+        <div class="top-bar">
+            <div class="user-info">
+                <span>{{ username }}</span>
+                <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a>
+            </div>
+        </div>
+    
+        <div class="container">
+            <div class="profile-info">
+                <div class="user-avatar">
+                    <img src="../static/img/avatar.jpg" alt="User Avatar">
+                </div>
+                <h2>{{ username }}</h2>
+                <div class="user-details">
+                    <div class="info-item">
+                        <div class="col">
+                            <label for="profile-username">Username:</label>
+                        </div>
+                        <div class="col">
+                            <span id="profile-username" class="editable">{{ user.username }}</span>
+                        </div>
+                        <div class="col">
+                            <i class="fas fa-pencil-alt edit-icon" data-field="username"></i>
+                            <i class="fas fa-save save-icon" data-field="username" style="display: none;"></i>
+                            <i class="fas fa-times cancel-icon" data-field="username" style="display: none;"></i>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="col">
+                            <label for="profile-email">Email:</label>
+                        </div>
+                        <div class="col">
+                            <span id="profile-email" class="editable">{{ user.email }}</span>
+                        </div>
+                        <div class="col">
+                            <i class="fas fa-pencil-alt edit-icon" data-field="email"></i>
+                            <i class="fas fa-save save-icon" data-field="email" style="display: none;"></i>
+                            <i class="fas fa-times cancel-icon" data-field="email" style="display: none;"></i>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="col">
+                            <label for="profile-phone">Phone:</label>
+                        </div>
+                        <div class="col">
+                            <span id="profile-phone" class="editable">{{ user.phone }}</span>
+                        </div>
+                        <div class="col">
+                            <i class="fas fa-pencil-alt edit-icon" data-field="phone"></i>
+                            <i class="fas fa-save save-icon" data-field="phone" style="display: none;"></i>
+                            <i class="fas fa-times cancel-icon" data-field="phone" style="display: none;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </body>
     
     <script>
-       $(document).ready(function() {
-            $('#editProfileBtn').click(function(e) {
-                e.preventDefault();
-                $('.user-details span').attr('contenteditable', 'true');
-                $('.user-details span').css({
-                    'border': '1px solid var(--color-border)',
-                    'padding': '5px',
-                    'background-color': 'transparent',
-                    'color': 'inherit'
-                });
-                $('#saveProfileBtn').show();
-                $('#cancelEditBtn').show();
-                $(this).hide();
-            });
+    $(document).ready(function() {
+    $('.edit-icon').click(function() {
+        var field = $(this).data('field');
+        var $valueSpan = $('#' + field);
+        var $editIcon = $(this);
+        var $saveIcon = $(this).siblings('.save-icon');
+        var $cancelIcon = $(this).siblings('.cancel-icon');
 
-            $('#saveProfileBtn').click(function(e) {
-                e.preventDefault();
-                $('.user-details span').attr('contenteditable', 'false');
-                $('.user-details span').css({
-                    'border': 'none',
-                    'padding': '0',
-                    'background-color': 'transparent',
-                    'color': 'inherit'
-                });
-                $(this).hide();
-                $('#editProfileBtn').show();
-                $('#cancelEditBtn').hide();
+        $valueSpan.attr('contenteditable', 'true');
+        $valueSpan.addClass('editable-active');
+        $valueSpan.focus();
 
-                var username = $('#profile-username').text();
-                var email = $('#profile-email').text();
-                var phone = $('#profile-phone').text();
+        $editIcon.hide();
+        $saveIcon.show();
+        $cancelIcon.show();
+    });
 
-                $.ajax({
-                    url: '/update_profile',
-                    type: 'POST',
-                    data: {
-                        username: username,
-                        email: email,
-                        phone: phone
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#updateMessage').html('<div class="success-message">' + response.message + '</div>').show();
-                        } else {
-                            $('#updateMessage').html('<div class="error-message">' + response.message + '</div>').show();
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(error);
-                        $('#updateMessage').html('<div class="error-message">An error occurred. Please try again later.</div>').show();
-                    }
-                });
-            });
+    $('.save-icon').click(function() {
+        var field = $(this).data('field');
+        var $valueSpan = $('#' + field);
+        var $editIcon = $(this).siblings('.edit-icon');
+        var $saveIcon = $(this);
+        var $cancelIcon = $(this).siblings('.cancel-icon');
 
-            $('#cancelEditBtn').click(function(e) {
-                e.preventDefault();
-                $('.user-details span').attr('contenteditable', 'false');
-                $('.user-details span').css({
-                    'border': 'none',
-                    'padding': '0',
-                    'background-color': 'transparent',
-                    'color': 'inherit'
-                });
-                $('#saveProfileBtn').hide();
-                $('#editProfileBtn').show();
-                $(this).hide();
+        $valueSpan.attr('contenteditable', 'false');
+        $valueSpan.removeClass('editable-active');
 
-                // Restore original values
-                var originalUsername = "{{ user.username }}";
-                var originalEmail = "{{ user.email }}";
-                var originalPhone = "{{ user.phone }}";
+        $editIcon.show();
+        $saveIcon.hide();
+        $cancelIcon.hide();
 
-                $('#profile-username').text(originalUsername);
-                $('#profile-email').text(originalEmail);
-                $('#profile-phone').text(originalPhone);
-
-                $('#updateMessage').html('').hide();
-            });
+        // Trimite cererea către server pentru a actualiza profilul
+        $.ajax({
+            url: '/update_profile',
+            type: 'POST',
+            data: {
+                field: field,
+                value: $valueSpan.text()
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#updateMessage').html('<div class="success-message">' + response.message + '</div>').show();
+                } else {
+                    $('#updateMessage').html('<div class="error-message">' + response.message + '</div>').show();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(error);
+                $('#updateMessage').html('<div class="error-message">An error occurred. Please try again later.</div>').show();
+            }
         });
+    });
+
+    $('.cancel-icon').click(function() {
+        var field = $(this).data('field');
+        var $valueSpan = $('#' + field);
+        var $editIcon = $(this).siblings('.edit-icon');
+        var $saveIcon = $(this).siblings('.save-icon');
+
+        $valueSpan.attr('contenteditable', 'false');
+        $valueSpan.removeClass('editable-active');
+
+        $editIcon.show();
+        $saveIcon.hide();
+        $(this).hide();
+    });
+});
+
 
     </script>
 </body>
