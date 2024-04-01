@@ -11,85 +11,108 @@
    
 </head>
 <body>
-    <div class="container">
-        <div class="top-bar">
-            <div class="user-info">
-                <span>{{ username }}</span>
-                <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a>
-            </div>
+    <div class="top-bar">
+        <div class="user-info">
+            <span>{{ username }}</span>
+            <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a>
         </div>
+    </div>
+
+    <div class="container">
         <div class="profile-info">
             <h1>User Profile</h1>
+            <a href="#" id="editProfileBtn"><i class="fas fa-user-edit"></i>Edit Profile</a>
             <div class="user-details">
-                <p><strong>Username:</strong> <span id="profile-username">{{ user.username }}</span></p>
-                <p><strong>Email:</strong> <span id="profile-email">{{ user.email }}</span></p>
-                <p><strong>Phone:</strong> <span id="profile-phone">{{ user.phone }}</span></p>
+                <p><strong>Username:</strong> <span id="profile-username" contenteditable="false">{{ user.username }}</span></p>
+                <p><strong>Email:</strong> <span id="profile-email" contenteditable="false">{{ user.email }}</span></p>
+                <p><strong>Phone:</strong> <span id="profile-phone" contenteditable="false">{{ user.phone }}</span></p>
             </div>
-        </div>
-
-        <div class="container">
-        <h1>User Profile</h1>
-        <form id="updateForm">
-            <div class="input-box">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" value="{{ username }}">
-            </div>
-            <div class="input-box">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="{{ user.email }}">
-            </div>
-            <div class="input-box">
-                <label for="phone">Phone</label>
-                <input type="tel" id="phone" name="phone" value="{{ user.phone }}">
-            </div>
+            <button id="saveProfileBtn" class="btn-save" style="display: none;">Save Profile</button>
+            <button id="cancelEditBtn" class="btn-cancel" style="display: none;">Cancel</button>
             <div id="updateMessage" class="message"></div>
-            <button type="submit">Update Profile</button>
-        </form>
+        </div>
     </div>
-  
-    </div>
+    
     <script>
        $(document).ready(function() {
-    $('#updateForm').submit(function(e) {
-        e.preventDefault();
+            $('#editProfileBtn').click(function(e) {
+                e.preventDefault();
+                $('.user-details span').attr('contenteditable', 'true');
+                $('.user-details span').css({
+                    'border': '1px solid var(--color-border)',
+                    'padding': '5px',
+                    'background-color': 'transparent',
+                    'color': 'inherit'
+                });
+                $('#saveProfileBtn').show();
+                $('#cancelEditBtn').show();
+                $(this).hide();
+            });
 
-        // Preia datele din formular
-        var username = $('#username').val();
-        var email = $('#email').val();
-        var phone = $('#phone').val();
+            $('#saveProfileBtn').click(function(e) {
+                e.preventDefault();
+                $('.user-details span').attr('contenteditable', 'false');
+                $('.user-details span').css({
+                    'border': 'none',
+                    'padding': '0',
+                    'background-color': 'transparent',
+                    'color': 'inherit'
+                });
+                $(this).hide();
+                $('#editProfileBtn').show();
+                $('#cancelEditBtn').hide();
 
-        // Trimite datele către ruta de actualizare a profilului
-        $.ajax({
-            url: '/update_profile',
-            type: 'POST',
-            data: {
-                username: username,
-                email: email,
-                phone: phone
-            },
-            success: function(response) {
-                if (response.success) {
-                    $('#updateMessage').html('<div class="success-message">' + response.message + '</div>');
-                    // Actualizează datele afișate în interfață
-                    updateProfileDetails(username, email, phone);
+                var username = $('#profile-username').text();
+                var email = $('#profile-email').text();
+                var phone = $('#profile-phone').text();
 
-                } else {
-                    $('#updateMessage').html('<div class="error-message">' + response.message + '</div>');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error(error);
-                $('#updateMessage').html('<div class="error-message">An error occurred. Please try again later.</div>');
-            }
+                $.ajax({
+                    url: '/update_profile',
+                    type: 'POST',
+                    data: {
+                        username: username,
+                        email: email,
+                        phone: phone
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#updateMessage').html('<div class="success-message">' + response.message + '</div>').show();
+                        } else {
+                            $('#updateMessage').html('<div class="error-message">' + response.message + '</div>').show();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        $('#updateMessage').html('<div class="error-message">An error occurred. Please try again later.</div>').show();
+                    }
+                });
+            });
+
+            $('#cancelEditBtn').click(function(e) {
+                e.preventDefault();
+                $('.user-details span').attr('contenteditable', 'false');
+                $('.user-details span').css({
+                    'border': 'none',
+                    'padding': '0',
+                    'background-color': 'transparent',
+                    'color': 'inherit'
+                });
+                $('#saveProfileBtn').hide();
+                $('#editProfileBtn').show();
+                $(this).hide();
+
+                // Restore original values
+                var originalUsername = "{{ user.username }}";
+                var originalEmail = "{{ user.email }}";
+                var originalPhone = "{{ user.phone }}";
+
+                $('#profile-username').text(originalUsername);
+                $('#profile-email').text(originalEmail);
+                $('#profile-phone').text(originalPhone);
+
+                $('#updateMessage').html('').hide();
+            });
         });
-
-        function updateProfileDetails(username, email, phone) {
-        $('#profile-username').text(username);
-        $('#profile-email').text(email);
-        $('#profile-phone').text(phone);
-    }
-    });
-});
 
     </script>
 </body>
