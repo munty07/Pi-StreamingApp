@@ -391,58 +391,33 @@ def profile():
 
     return render_template('profile.html', username=user_data['username'], user=user_data)
 
+
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
-    if 'user_id' not in session:
-        flash('You must be logged in to update your profile.', 'danger')
-        return redirect(url_for('login'))
-
+    
     user_id = session['user_id']
-    username = request.form.get('username')
-    email = request.form.get('email')
-    phone = request.form.get('phone')
+    data = request.form
 
     try:
-        db.child("Users").child(user_id).update({
-            'username': username,
-            'email': email,
-            'phone': phone
-        })
+        if 'field' in data and 'value' in data:
+            field = data['field']
+            value = data['value']
 
-        # Mesaj de succes
-        success_message = "Profile updated successfully!"
+            db.child("Users").child(user_id).update({
+                field: value
+            })
 
-        # Răspunsul către client
-        return jsonify({'success': True, 'message': success_message})
+            success_message = "Profile updated successfully!"
+
+            return jsonify({'success': True, 'message': success_message})
+
+        else:
+            raise ValueError("Field or value missing in request.")
 
     except Exception as e:
-        # În caz de eroare, returnează un mesaj de eroare
         error_message = str(e)
         return jsonify({'success': False, 'message': error_message})
 
-    # Verificăm dacă utilizatorul există în baza de date
-    # user_ref = db.child("Users").child(user_id)
-    # user_info = user_ref.get().val()
-
-    # if user_info is None:
-    #     flash('User data not found.', 'danger')
-    #     return redirect(url_for('index'))
-
-    # # Actualizăm informațiile utilizatorului
-    # updated_data = {
-    #     "username": username,
-    #     "email": email,
-    #     "phone": phone
-    # }
-
-    # try:
-    #     return jsonify({'success': True, 'message': 'Profile updated successfully!', 'user': updated_data})
-
-    # except Exception as e:
-    #     flash('An error occurred while updating profile. Please try again.', 'danger')
-    #     print(e)
-
-    return redirect(url_for('profile'))
 
 
 # logout function
