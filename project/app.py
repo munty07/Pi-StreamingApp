@@ -1,4 +1,4 @@
-from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify, flash
+from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify, flash, send_file
 import pyrebase
 import cv2
 from dotenv import load_dotenv
@@ -418,6 +418,60 @@ def update_profile():
         error_message = str(e)
         return jsonify({'success': False, 'message': error_message})
 
+
+@app.route('/upload_profile_picture', methods=['POST'])
+def upload_profile_picture():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+    data = request.get_json()
+    image_data = data['image']
+    image_data = base64.b64decode(image_data.split(',')[1])
+    image = Image.open(BytesIO(image_data))
+
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    unique_filename = f"{user_id}_{timestamp}.png"
+    temp_path = f"temp_{unique_filename}"
+    image.save(temp_path)
+
+    # Specifică folderul în Firebase Storage și încarcă fișierul
+    storage_path = f"ProfilePictures/{user_id}/{unique_filename}"
+    storage.child(storage_path).put(temp_path)
+
+    # Stochează metadatele în Realtime Database sub calea structurată
+    db.child("UserProfilePictures").child(user_id).set({
+        "storage_path": storage_path
+        
+    })
+    # Șterge fișierul temporar
+    os.remove(temp_path)
+    return jsonify({"message": "Imaginea a fost încărcată cu succes!"})
+
+
+@app.route('/profile_picture')
+def get_profile_picture():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+
+    # Verificăm dacă utilizatorul are o imagine de profil în baza de date
+    user_data = db.child("UserProfilePictures").child(user_id).get().val()
+
+    if user_data:
+        # Obținem calea către imaginea de profil din datele utilizatorului
+        storage_path = user_data.get('storage_path', '')
+        print("Path: " + storage_path)
+        # Construim calea absolută către fișierul de imagine
+        try:
+            image_url = storage.child(storage_path).get_url(None)
+            return redirect(image_url)
+        except Exception as e:
+            print("Error getting image from Firebase Storage:", e)
+    
+    # Dacă utilizatorul nu are o imagine de profil sau calea nu este validă, returnăm o imagine de rezervă
+    return redirect('/static/img/avatar.jpg')
 
 
 # logout function

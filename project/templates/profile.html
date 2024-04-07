@@ -20,7 +20,13 @@
     <div class="container">
         <div class="profile-info">
             <div class="user-avatar">
-                <img src="../static/img/avatar.jpg" alt="User Avatar">
+                <img src="/profile_picture" alt="User Avatar" class="user-img">
+                <div class="overlay-buttons">
+                    <!-- <button class="btn-overlay" id="btnUpload" title="Upload a photo from your device"><i class="fas fa-upload"></i></button>
+                    <button class="btn-overlay" id="btnPhoto" title="Take a photo"><i class="fas fa-camera"></i></button> -->
+                    <input class="btn-overlay" type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <label for="imageUpload" class="btn-overlay"><i class="fas fa-upload"></i></label>
+                </div>
             </div>
             <h2  class="show-username">{{ username }}</h2>
             <div class="user-details">
@@ -30,11 +36,12 @@
                     </div>
                     <div class="col">
                         <span id="profile-username" class="editable">{{ user.username }}</span>
+                        <span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
                     </div>
                     <div class="col">
-                        <i class="fas fa-pencil-alt edit-icon" data-field="username"></i>
-                        <i class="fas fa-check save-icon" data-field="username" style="display: none;"></i>
-                        <i class="fas fa-times cancel-icon" data-field="username" style="display: none;"></i>
+                        <i class="fas fa-pencil-alt edit-icon" data-field="username" title="Edit"></i>
+                        <i class="fas fa-check save-icon" data-field="username" title="Save" style="display: none;"></i>
+                        <i class="fas fa-times cancel-icon" data-field="username" title="Cancel" style="display: none;"></i>
                     </div>
                 </div>
                 <div class="info-item">
@@ -43,11 +50,12 @@
                     </div>
                     <div class="col">
                         <span id="profile-email" class="editable">{{ user.email }}</span>
+                        <span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
                     </div>
                     <div class="col">
-                        <i class="fas fa-pencil-alt edit-icon" data-field="email"></i>
-                        <i class="fas fa-check save-icon" data-field="email" style="display: none;"></i>
-                        <i class="fas fa-times cancel-icon" data-field="email" style="display: none;"></i>
+                        <i class="fas fa-pencil-alt edit-icon" data-field="email" title="Edit"></i>
+                        <i class="fas fa-check save-icon" data-field="email" title="Save" style="display: none;"></i>
+                        <i class="fas fa-times cancel-icon" data-field="email" title="Cancel" style="display: none;"></i>
                     </div>
                 </div>
                 <div class="info-item">
@@ -56,85 +64,52 @@
                     </div>
                     <div class="col">
                         <span id="profile-phone" class="editable">{{ user.phone }}</span>
+                        <span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
                     </div>
                     <div class="col">
-                        <i class="fas fa-pencil-alt edit-icon" data-field="phone"></i>
-                        <i class="fas fa-check save-icon" data-field="phone" style="display: none;"></i>
-                        <i class="fas fa-times cancel-icon" data-field="phone" style="display: none;"></i>
+                        <i class="fas fa-pencil-alt edit-icon" data-field="phone" title="Edit"></i>
+                        <i class="fas fa-check save-icon" data-field="phone" title="Save" style="display: none;"></i>
+                        <i class="fas fa-times cancel-icon" data-field="phone" title="Cancel" style="display: none;"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+   
+	<script src="../static/script/profile.js"></script>
+    
+<script>
+    document.getElementById('imageUpload').addEventListener('change', function(event) {
+    var file = event.target.files[0];
+    var reader = new FileReader();
 
-    <script>
-        $(document).ready(function() {
-            $('.edit-icon').click(function() {
-                var field = $(this).data('field');
-                var $valueSpan = $('#profile-' + field);
-                var $editIcon = $(this);
-                var $saveIcon = $(this).siblings('.save-icon');
-                var $cancelIcon = $(this).siblings('.cancel-icon');
-    
-                var currentValue = $valueSpan.text().trim();
-                var $inputField = $('<input type="text" id="profile-' + field +'" class="editable-input" value="' + currentValue + '">');
-                $inputField.data('initial', currentValue);
-                
-                $valueSpan.replaceWith($inputField);
-                $inputField.focus();
-    
-                $editIcon.hide();
-                $saveIcon.show();
-                $cancelIcon.show();
-            });
-    
-            $(document).on('click', '.save-icon', function() {
-                var field = $(this).data('field');
-                var $inputField = $('#profile-' + field);
-                var $editIcon = $(this).siblings('.edit-icon');
-                var $cancelIcon = $(this).siblings('.cancel-icon');
-                var $saveIcon = $(this);
-                var newValue = $inputField.val().trim();
+    reader.onload = function(e) {
+        var imageData = e.target.result;
+        uploadImage(imageData);
+    };
 
-                $.ajax({
-                    url: '/update_profile',
-                    type: 'POST',
-                    data: {
-                        field: field,
-                        value: newValue
-                    },
-                    success: function(response) {
-                        $inputField.replaceWith('<span id="profile-' + field + '" class="editable">' + newValue + '</span>');
-                        if(field == 'username'){
-                            var showUsername = $('.show-username');
-                            showUsername.text(newValue);
-                        }
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+});
 
-                        $editIcon.show();
-                        $cancelIcon.hide();
-                        $saveIcon.hide();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(error);
-                    }
-                });
-            });
-    
-            $(document).on('click', '.cancel-icon', function() {
-                var field = $(this).data('field');
-                var $inputField = $('#profile-' + field);
-                var $editIcon = $(this).siblings('.edit-icon');
-                var $saveIcon = $(this).siblings('.save-icon');
-                var currentValue = $inputField.data('initial');
-
-                $inputField.replaceWith('<span id="profile-' + field + '" class="editable">' + currentValue + '</span>');
-              
-                $editIcon.show();
-                $saveIcon.hide();
-                $(this).hide();
-            });
-        });
-    </script>
-    
+// Funcția pentru trimiterea imaginii către server folosind AJAX
+function uploadImage(imageData) {
+    $.ajax({
+        url: '/upload_profile_picture',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ image: imageData }),
+        success: function(response) {
+            console.log(response.message);
+            // Aici poți adăuga acțiuni suplimentare după ce imaginea a fost încărcată cu succes
+        },
+        error: function(xhr, status, error) {
+            console.error(error);
+            // Aici poți gestiona erorile în cazul în care încărcarea imaginii a eșuat
+        }
+    });
+}
+</script>
 </body>
 </html>
