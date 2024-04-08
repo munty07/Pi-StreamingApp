@@ -3,10 +3,15 @@
     --color-border: #cd294f;
     --color-button-hover: #ff2770;
     --color-button: #c72f62;
+    --color-error: #d43f3a;
+    --color-alert: #e2054f;
     --color-bg: #191d2b;
     --color-modal: #2c303a;
+    --color-info: #6a6f7d;
     --color-text: #fff;
     --color-opacity: rgba(0, 0, 0, 0.8);
+    --color-btn: rgba(255, 255, 255, 0.8);
+    --color-black: #000;
 }
 
 body {
@@ -14,7 +19,17 @@ body {
     background-color: var(--color-bg);
     color: var(--color-text);
     margin: 0;
-    padding: 20px;
+    padding: 0; 
+    overflow-x: hidden; 
+}
+
+a{
+    text-decoration: none;
+    color: var(--color-button);
+}
+
+h1{
+    text-align: center;
 }
 
 .container {
@@ -27,23 +42,18 @@ body {
 }
 
 .top-bar {
-    padding: 10px 20px;
-    margin-bottom: 20px;
-    float: right;
-}
-
-a{
-    text-decoration: none;
-    color: var(--color-button);
-}
-
-h1{
-    text-align: center;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .user-info {
+    position: fixed;
+    top: 0;
+    right: 20px;
     display: flex;
     align-items: center;
+    padding: 10px 0px 0px 0px;
 }
 
 .user-info span {
@@ -71,12 +81,14 @@ h1{
 .user-avatar {
     position: relative;
     display: inline-block;
+    transition: opacity 0.5s ease;
 }
 
 .user-avatar img {
     width: 120px;
     height: 120px;
     border-radius: 50%;
+    transition: opacity 0.5s ease;
 }
 
 .user-details {
@@ -135,36 +147,27 @@ h1{
 }
 
 .save-icon:hover,
-.cancel-icon:hover {
+.cancel-icon:hover,
+.edit-icon:hover {
     color: var(--color-button-hover);
-}
-
-.editable-active {
-    border: 1px solid var(--color-border);
-    padding: 5px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    min-width: 100px;
-    display: inline-block;
 }
 
 input{
     background: transparent;
     border: none;
     outline: none;
-    color: #fff;
+    color:  var(--color-text);
     font-weight: 600; 
     text-align: center;
 }
 
 input:focus{
-    color: #ff2770;
+    color: var(--color-button-hover);
 }
 
-
 .error {
-    border-color: #d43f3a !important;
-    color: #d43f3a !important;
+    border-color: var(--color-error) !important;
+    color: var(--color-error) !important;
 }
 
 .error-icon {
@@ -175,7 +178,7 @@ input:focus{
 }
 
 .error-icon i {
-    color: #d43f3a;
+    color: var(--color-error);
     font-size: 1.2em;
 }
 
@@ -183,18 +186,21 @@ input:focus{
 .overlay-buttons {
     display: none;
     position: absolute;
-    top: 40%;
-    left: 20%;
+    top: 35%;
+    left: 25%;
 }
 
 .user-avatar:hover .overlay-buttons {
     display: block;
 }
+.user-avatar:hover img {
+    opacity: 0.5;
+}
 
 .btn-overlay { 
-    background-color: #c72f62;
-    border-color: #ff2770;
-    color: #fff;
+    background-color: var(--color-button);
+    border: none;
+    color: var(--color-text);
     border-radius: 50%;
     padding: 8px;
     font-size: 13px;
@@ -204,13 +210,11 @@ input:focus{
 }
 
 .btn-overlay:hover {
-    background-color: #ff2770;
-    border-color: #c72f62;
-    color: #fff;
+    background-color: var(--color-button-hover);
+    border-color: var(--color-button);
+    color: var(--color-text);
 }
 
-
-/* CSS pentru overlay-ul cu preview-ul camerei și butoanele */
 #previewOverlay {
     display: none;
     position: fixed;
@@ -218,7 +222,7 @@ input:focus{
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--color-opacity);
     z-index: 1000;
     overflow: hidden;
 }
@@ -245,13 +249,9 @@ video {
     font-size: 24px;
     border: none;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.8);
-    color: #333;
+    background-color:  var(--color-btn);
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
-}
-
-.save-btn {
     bottom: 20px;
     right: calc(50% - 40px); 
 }
