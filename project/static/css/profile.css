@@ -187,7 +187,8 @@ input:focus{
     display: none;
     position: absolute;
     top: 35%;
-    left: 25%;
+    /* left: 25%; */
+    left: 10%;
 }
 
 .user-avatar:hover .overlay-buttons {
@@ -265,6 +266,7 @@ video {
     border: none;
     background: transparent;
     z-index: 2;
+    cursor: pointer;
 }
 
 .save-btn:hover,

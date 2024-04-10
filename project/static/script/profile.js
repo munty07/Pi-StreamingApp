@@ -1,5 +1,6 @@
 $(document).ready(function () {
 
+    //  EDIT PROFILE DATA
     $('.edit-icon').click(function () {
         var field = $(this).data('field');
         var $valueSpan = $('#profile-' + field);
@@ -83,6 +84,7 @@ $(document).ready(function () {
         });
     });
 
+    //  SAVE YOUR UPDATED PROFILE DATA
     $(document).on('click', '.save-icon', function () {
         var field = $(this).data('field');
         var $inputField = $('#profile-' + field);
@@ -115,6 +117,7 @@ $(document).ready(function () {
         });
     });
 
+    //  CANCEL EDITING
     $(document).on('click', '.cancel-icon', function () {
         var field = $(this).data('field');
         var $inputField = $('#profile-' + field);
@@ -137,4 +140,101 @@ $(document).ready(function () {
         $saveIcon.hide();
         $(this).hide();
     });
+
+    //  UPLOAD PROFILE PICTURE
+    document.getElementById('imageUpload').addEventListener('change', function (event) {
+        var file = event.target.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            var imageData = e.target.result;
+            uploadImage(imageData);
+        };
+
+        if (file) {
+            reader.readAsDataURL(file);
+        }
+    });
+
+    var videoPreview = document.createElement('video');
+    videoPreview.autoplay = true;
+    videoPreview.muted = true;
+    var takePhoto = false;
+
+    //  OPEN CAMERA TO TAKE A PHOTO
+    $('#btnPhoto').click(function () {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    takePhoto = true;
+                    videoPreview.srcObject = stream;
+
+                    $('#imagePreview').empty().append(videoPreview);
+                    $('#previewOverlay').fadeIn();
+
+                    $('#btnSavePhoto').show();
+
+                    //  SAVE PHOTO IN DB
+                    $('#btnSavePhoto').click(function () {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = videoPreview.videoWidth;
+                        canvas.height = videoPreview.videoHeight;
+                        var context = canvas.getContext('2d');
+                        context.drawImage(videoPreview, 0, 0, canvas.width, canvas.height);
+
+                        var imageData = canvas.toDataURL('image/png');
+
+                        stream.getTracks().forEach(function (track) {
+                            track.stop();
+                        });
+
+                        uploadImage(imageData);
+
+                        $('#previewOverlay').fadeOut();
+                    });
+                })
+                .catch(function (error) {
+                    console.error('Error accessing camera: ', error);
+                });
+        } else {
+            console.error('Camera not supported');
+        }
+    });
+
+    //  UPLOAD IMAGE FUNCTION
+    function uploadImage(imageData) {
+        $.ajax({
+            url: '/upload_profile_picture',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ image: imageData }),
+            success: function (response) {
+                console.log(response.message);
+                $(".user-img").attr("src", imageData);
+            },
+            error: function (xhr, status, error) {
+                console.error(error);
+            }
+        });
+    }
+
+    //  PREVIEW PROFILE PICTURE
+    $('#btnPreview').click(function () {
+        var imageUrl = $('.user-img').attr('src');
+        $('#imagePreview').html(`<img src="${imageUrl}" alt="User Avatar">`);
+        $('#previewOverlay').fadeIn();
+        $('#btnSavePhoto').hide();
+    });
+
+    //  CLOSE PREVIEW IMAGE/VIDEO
+    $('#closePreview').click(function () {
+        if (takePhoto) { // for take a photo
+            videoPreview.srcObject.getTracks().forEach(function (track) {
+                track.stop();
+            });
+        }
+
+        $('#previewOverlay').fadeOut();
+    });
+
 });

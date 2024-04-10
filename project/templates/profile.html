@@ -25,6 +25,7 @@
                     <input class="btn-overlay" type="file" id="imageUpload" accept="image/*" style="display: none;">
                     <label for="imageUpload" class="btn-overlay" title="Upload a photo from your device"><i class="fas fa-upload"></i></label>
                     <button class="btn-overlay" id="btnPhoto" title="Take a photo"><i class="fas fa-camera"></i></button> 
+                    <button class="btn-overlay" id="btnPreview" title="Show profile picture"><i class="fas fa-eye"></i></button> 
                 </div>
             </div>
             <h2  class="show-username">{{ username }}</h2>
@@ -79,100 +80,8 @@
         <button class="save-btn" id="btnSavePhoto" title="Save Photo"><i class="fas fa-save"></i></button>
         <button class="close-btn" id="closePreview" title="Close"><i class="fas fa-times"></i></button>
     </div>
-	<script src="../static/script/profile.js"></script>
     
-    <script>
-        document.getElementById('imageUpload').addEventListener('change', function(event) {
-            var file = event.target.files[0];
-            var reader = new FileReader();
+	<script src="../static/script/profile.js"></script>
 
-            reader.onload = function(e) {
-                var imageData = e.target.result;
-                uploadImage(imageData);
-            };
-
-            if (file) {
-                reader.readAsDataURL(file);
-            }
-        });
-
-        var videoPreview = document.createElement('video');
-        videoPreview.autoplay = true;
-        videoPreview.muted = true; 
-        
-        
-        $('#btnPhoto').click(function() {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                videoPreview.srcObject = stream;
-
-                // Afișăm video-ul în div-ul de preview
-                $('#imagePreview').empty().append(videoPreview);
-                $('#previewOverlay').fadeIn();
-
-                // Afișăm butonul "Save Photo"
-                $('#btnSavePhoto').show();
-
-                // Eveniment pentru când utilizatorul apasă butonul "Save Photo"
-                $('#btnSavePhoto').click(function() {
-                    var canvas = document.createElement('canvas');
-                    canvas.width = videoPreview.videoWidth;
-                    canvas.height = videoPreview.videoHeight;
-                    var context = canvas.getContext('2d');
-                    context.drawImage(videoPreview, 0, 0, canvas.width, canvas.height);
-
-                    var imageData = canvas.toDataURL('image/png');
-
-                    // Oprim camera și eliberăm resursele
-                    stream.getTracks().forEach(function(track) {
-                        track.stop();
-                    });
-
-                    // Încărcăm imaginea
-                    uploadImage(imageData);
-
-                    // Ascundem overlay-ul pentru preview
-                    $('#previewOverlay').fadeOut();
-                });
-            })
-            .catch(function(error) {
-                console.error('Error accessing camera: ', error);
-            });
-        } else {
-            console.error('Camera not supported');
-        }
-    });
-
-
-
-
-        // Butonul "Close Preview"
-        $('#closePreview').click(function() {
-            // Oprim video-ul
-            videoPreview.srcObject.getTracks().forEach(function(track) {
-                track.stop();
-            });
-
-            // Ascundem overlay-ul pentru preview
-            $('#previewOverlay').fadeOut();
-        });
-
-        function uploadImage(imageData) {
-            $.ajax({
-                url: '/upload_profile_picture',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ image: imageData }),
-                success: function(response) {
-                    console.log(response.message);
-                    $(".user-img").attr("src",imageData);
-                },
-                error: function(xhr, status, error) {
-                    console.error(error);
-                }
-            });
-        }
-    </script>
 </body>
 </html>
