@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu</title>
+</head>
+<body>
+
+    {% macro render_menu(active_page, username) %}
+        <ul class="menu">
+            <li class="{% if active_page == 'home' %}active{% endif %}"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="{% if active_page == 'streaming' %}active{% endif %}"><a href="{{ url_for('streaming') }}">Streaming</a></li>
+            <li class="{% if active_page == 'storage' %}active{% endif %}"><a href="{{ url_for('storage_page') }}">Storage</a></li>
+            <li class="{% if active_page == 'profile' %}active{% endif %}"><a href="{{ url_for('profile') }}">Profile</a></li>
+            <li class="user-info"><span>{{ username }}</span><a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a></li>
+        </ul>
+    {% endmacro %}
+
+</body>
+</html>

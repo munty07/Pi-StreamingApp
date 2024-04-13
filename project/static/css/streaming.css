@@ -12,16 +12,22 @@
     --color-opacity: rgba(0, 0, 0, 0.8);
     --color-btn: rgba(255, 255, 255, 0.8);
     --color-black: #000;
+    --color-menu-hover: #3c414f;
 }
 
 body {
+
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+.container{
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    height: 100vh;
-    margin: 0;
-    background-color: var(--color-bg);
 }
 
 h2{

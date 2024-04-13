@@ -12,6 +12,7 @@
     --color-opacity: rgba(0, 0, 0, 0.8);
     --color-btn: rgba(255, 255, 255, 0.8);
     --color-black: #000;
+    --color-menu-hover: #3c414f;
 }
 
 body {
@@ -21,6 +22,7 @@ body {
     margin: 0;
     padding: 0; 
     overflow-x: hidden; 
+    height: 500vh;
 }
 
 a{
@@ -41,38 +43,6 @@ h1{
     border-radius: 8px;
 }
 
-.top-bar {
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.user-info {
-    position: fixed;
-    top: 0;
-    right: 20px;
-    display: flex;
-    align-items: center;
-    padding: 10px 0px 0px 0px;
-}
-
-.user-info span {
-    margin-right: 10px;
-}
-
-.btn-logout {
-    color: var(--color-text);
-    text-decoration: none;
-    border: 1px solid var(--color-border);
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-}
-
-.btn-logout:hover {
-    background-color: var(--color-button-hover);
-    border-color: var(--color-border-hover);
-}
 
 .profile-info {
     text-align: center;

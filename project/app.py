@@ -156,7 +156,8 @@ def gen_frames():
 @app.route('/streaming')
 def streaming():
     if 'user' in session:
-        return render_template('streaming.html')
+        username = session.get('username', 'Oaspete')
+        return render_template('streaming.html', username=username)
     else:
         return redirect(url_for('index'))
 
@@ -261,7 +262,8 @@ def upload_video():
 @app.route('/storage')
 def storage_page():
     if 'user' in session:
-        return render_template('storage.html')
+        username = session.get('username', 'Oaspete')
+        return render_template('storage.html', username=username)
     else:
         return redirect(url_for('index'))
 
@@ -474,6 +476,15 @@ def get_profile_picture():
 def update_username_in_session(new_username):
     if 'user_id' in session:
         session['username'] = new_username
+
+
+@app.context_processor
+def inject_username():
+    if 'user' in session:
+        username = session.get('username', 'Oaspete')
+        return dict(username=username)
+    else:
+        return dict(username=None)
 
 
 # logout function
