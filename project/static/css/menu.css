@@ -74,3 +74,51 @@
 .btn-logout i {
   margin-right: 10px;
 }
+
+.burger-icon {
+  display: none; 
+}
+
+.open-menu {
+  display: block !important;
+}
+
+@media screen and (max-width: 768px) {
+  .menu li {
+    display: none; 
+  }
+
+  .menu{
+    display: block;
+    text-align: right;
+  }
+  
+  .burger-icon {
+    display: block !important;
+    cursor: pointer;
+    padding: 10px;
+  }
+
+  .user-info {
+    flex: 1 0 100%;
+    order: 1; 
+    text-align: center; 
+  }
+
+  .user-info span {
+    display: none;
+  }
+
+  .menu.open-menu li {
+    display: block; 
+    text-align: right;
+  }
+
+  #menuIcon{
+    font-size: 25px;
+  }
+
+  #menuIcon:hover{
+    color: var(--color-button-hover);
+  }
+}

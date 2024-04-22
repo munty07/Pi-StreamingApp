@@ -9,19 +9,25 @@ window.onload = function () {
     var captureButton = document.getElementById("captureButton");
     var zoomInButton = document.getElementById("zoomInButton");
     var zoomOutButton = document.getElementById("zoomOutButton");
+    var capturedCanvas;
+
 
     pauseButton.addEventListener('click', function () {
         const videoElement = document.querySelector("#videoContainer video");
         const icon = pauseButton.querySelector("i");
+
         // Verifică dacă videoElement există și are dimensiuni
         if (videoElement && videoElement.videoWidth > 0) {
             if (!isPaused) {
-                // Logica pentru pauză: captează frame-ul, afișează-l și oprește sunetul
                 const captureCanvas = document.createElement("canvas");
+                captureCanvas.id = "capturedCanvas";
                 captureCanvas.width = videoElement.videoWidth;
                 captureCanvas.height = videoElement.videoHeight;
                 const context = captureCanvas.getContext('2d');
                 context.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
+
+                captureCanvas.setAttribute("data-video-width", videoElement.videoWidth);
+                captureCanvas.setAttribute("data-video-height", videoElement.videoHeight);
 
                 videoElement.style.display = 'none'; // Ascunde video
                 videoElement.parentNode.insertBefore(captureCanvas, videoElement.nextSibling); // Afișează canvas-ul
@@ -36,7 +42,7 @@ window.onload = function () {
                 const captureCanvas = videoElement.nextElementSibling;
                 if (captureCanvas) captureCanvas.remove();
 
-                videoElement.style.display = 'block'; // Afișează video
+                videoElement.style.display = 'flex'; // Afișează video
                 videoElement.muted = false; // Porneste sunetul
 
                 isPaused = false;
@@ -55,21 +61,27 @@ window.onload = function () {
 
         var container = document.querySelector("#videoContainer");
         var videoElement = container.querySelector("video");
-        var imgElement = container.querySelector("img");
+        capturedCanvas = document.getElementById('capturedCanvas');
         var canvas = document.createElement("canvas");
         var ctx = canvas.getContext("2d");
 
-        if (videoElement) {
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
-        } else if (imgElement) {
-            canvas.width = imgElement.width;
-            canvas.height = imgElement.height;
-            ctx.drawImage(imgElement, 0, 0, imgElement.width, imgElement.height);
+        if (isPaused) {
+            var videoWidth = parseInt(capturedCanvas.getAttribute("data-video-width"));
+            var videoHeight = parseInt(capturedCanvas.getAttribute("data-video-height"));
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            ctx.drawImage(capturedCanvas, 0, 0, videoWidth, videoHeight);
         } else {
-            console.error("No media element found for capture.");
-            return;
+
+            if (videoElement) {
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
+
+            } else {
+                console.error("No media element found for capture.");
+                return;
+            }
         }
 
         var dataURL = canvas.toDataURL("image/png");
@@ -119,19 +131,14 @@ window.onload = function () {
         updateCursor();
     });
 
-    videoContainer.addEventListener('mousemove', function (e) {
-        if (!window.isZoomInMode && !window.isZoomOutMode) return;
-
+    // Funcția pentru gestionarea zoom-ului și actualizarea canvas-ului de captură
+    function handleZoomAndCapture(e) {
         var rect = videoContainer.getBoundingClientRect();
         var xPos = (e.clientX - rect.left) / rect.width * 100;
         var yPos = (e.clientY - rect.top) / rect.height * 100;
 
         var videoElement = document.querySelector("#videoContainer video");
         videoElement.style.transformOrigin = `${xPos}% ${yPos}%`;
-    });
-
-    videoContainer.addEventListener('click', function (e) {
-        if (!window.isZoomInMode && !window.isZoomOutMode) return;
 
         if (window.isZoomInMode && zoomLevel < maxZoomLevel) {
             zoomLevel *= zoomFactor;
@@ -140,14 +147,30 @@ window.onload = function () {
             if (zoomLevel < minZoomLevel) zoomLevel = minZoomLevel;
         }
         updateZoom();
-    });
+    }
 
+    // Actualizați evenimentul de click pentru a apela handleZoomAndCapture
+    videoContainer.addEventListener('click', handleZoomAndCapture);
+
+    // Actualizați funcția de zoom pentru a afecta și canvas-ul de captură
+    function updateZoom() {
+        var video = document.querySelector("#videoContainer video");
+        video.style.transform = "scale(" + zoomLevel + ")";
+
+        var capturedCanvas = document.getElementById('capturedCanvas');
+        if (capturedCanvas) {
+            capturedCanvas.style.transform = "scale(" + zoomLevel + ")";
+        }
+    }
+
+    // Resetarea modului de zoom
     function resetZoomMode() {
         window.isZoomInMode = false;
         window.isZoomOutMode = false;
         updateCursor();
     }
 
+    // Actualizarea cursorului în funcție de modul de zoom
     function updateCursor() {
         if (window.isZoomInMode) {
             videoContainer.className = 'zoom-in-cursor';
@@ -156,11 +179,6 @@ window.onload = function () {
         } else {
             videoContainer.className = '';
         }
-    }
-
-    function updateZoom() {
-        var video = document.querySelector("#videoContainer video");
-        video.style.transform = "scale(" + zoomLevel + ")";
     }
 
     // function downloadImage(dataUrl, filename) {
@@ -250,7 +268,7 @@ window.onload = function () {
                 recordedBlobs.push(event.data);
             }
         };
-        mediaRecorder.start(10); // Colectează datele în fragmente de 10ms
+        mediaRecorder.start(10);
     }
 
     function stopRecording() {

@@ -13,6 +13,14 @@ from werkzeug.utils import secure_filename
 # import re #regex
 # from wtforms import Form, StringField, PasswordField, validators
 # from email_validator import validate_email, EmailNotValidError
+from flask_mail import Mail, Message
+import time
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText    
+from email.mime.base import MIMEBase
+from email import encoders
 
 # Load environment variables from .env
 load_dotenv() 
@@ -29,6 +37,17 @@ config ={
     "messagingSenderId": os.getenv('MESSAGING_SENDER_ID'),
     "appId": os.getenv('APP_ID')
 }
+
+app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
+app.config['MAIL_PORT']=587
+app.config['MAIL_USERNAME']='api'
+app.config['MAIL_PASSWORD']='b35f8d67f9dbcb2e687e6ae1e37cd20e'
+app.config['MAIL_USE_TLS']=True
+app.config['MAIL_USE_SSL']=False
+
+app.config['UPLOAD_FOLDER'] = 'project/static/tempFile'
+
+mail = Mail(app)
 
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
@@ -201,6 +220,44 @@ def upload_image():
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
 
+# def send_email(video):
+#     # video_path = 'D:\\Visual Studio Code\\python\\streamingApp\\project\\static\\img\\videotest.webm'
+
+#     # if os.path.exists(video_path):
+#     with app.open_resource(video) as video_file:
+#         video_data = video_file.read()
+#         message = Message(
+#             subject = 'Test',
+#             recipients = ['proiecte.facultate10@gmail.com'],
+#             sender = 'mailtrap@demomailtrap.com'
+#         )
+
+#         message.body = 'Hello, bla bla!'
+#         message.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
+
+#         mail.send(message)
+
+#         return 'Message sent!'
+#     # else:
+#     #     return 'Video file not found!'
+
+def send_email(video_path):
+    with open(video_path, 'rb') as video_file:
+        video_data = video_file.read()
+        
+        message = Message(
+            subject='Subject',
+            recipients=['proiecte.facultate10@gmail.com'],
+            sender='mailtrap@demomailtrap.com'
+        )
+        message.body = 'Hello!'
+        message.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
+    
+        mail.send(message)
+
+        return 'Message sent!'
+
+    
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
@@ -230,12 +287,9 @@ def upload_video():
     filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
 
     # Salvarea temporară și încărcarea pe Firebase
-    temp_path = f"temp_{filename}"
+    temp_path = f"temp_{filename}.mp4"
     video_file.save(temp_path)
-
-    # Utilizează MoviePy pentru a afla durata videoclipului
-    # with VideoFileClip(temp_path) as video:
-    #     duration = video.duration  # Durata în secunde
+    send_email(temp_path)
 
     storage_path = f"LiveRecordings/{user_id}/{filename}"
     storage.child(storage_path).put(temp_path)
@@ -247,8 +301,6 @@ def upload_video():
             "size":  f"{file_size_in_mb:.2f} MB",
             "filename": filename,
             "storage_path": storage_path
-            # ,
-            # "duration": f"{duration:.2f} seconds"  # Adaugă durata aici
         }
     })
 

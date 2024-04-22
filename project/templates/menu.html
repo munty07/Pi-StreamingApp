@@ -9,12 +9,49 @@
 
     {% macro render_menu(active_page, username) %}
         <ul class="menu">
+            <li class="burger-icon" onclick="toggleMenu()"> <i class="fas fa-bars" id="menuIcon"></i> </li>
             <li class="{% if active_page == 'home' %}active{% endif %}"><a href="{{ url_for('home') }}">Home</a></li>
             <li class="{% if active_page == 'streaming' %}active{% endif %}"><a href="{{ url_for('streaming') }}">Streaming</a></li>
             <li class="{% if active_page == 'storage' %}active{% endif %}"><a href="{{ url_for('storage_page') }}">Storage</a></li>
             <li class="{% if active_page == 'profile' %}active{% endif %}"><a href="{{ url_for('profile') }}">Profile</a></li>
             <li class="user-info"><span>{{ username }}</span><a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a></li>
+            
         </ul>
+        <script>
+
+            window.addEventListener('resize', function() {
+            var menu = document.querySelector('.menu');
+            var icon = document.getElementById('menuIcon');
+
+            // Verificăm dacă meniul este deschis
+            if (menu.classList.contains('open-menu')) {
+                // Verificăm dimensiunea ecranului
+                if (window.innerWidth > 768) { // Dacă ecranul este mai mare de 768px
+                menu.classList.remove('open-menu'); // Închidem meniul
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+                }
+            }
+            });
+
+
+           function toggleMenu() {
+                var menu = document.querySelector('.menu');
+                var icon = document.getElementById('menuIcon');
+
+                menu.classList.toggle('open-menu');
+
+                if (menu.classList.contains('open-menu')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            }
+
+
+        </script>
     {% endmacro %}
 
 </body>

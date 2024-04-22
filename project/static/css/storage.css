@@ -21,6 +21,16 @@ body {
     color: var(--color-text);
 }
 
+.menu-area{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.btn{
+    margin: 5px !important;
+}
+
 .btn-custom { 
     background-color: var(--color-button);
     border-color: var(--color-border);
@@ -29,6 +39,7 @@ body {
 .btn-custom:hover {
     background-color: var(--color-button-hover);
     border-color: var(--color-border);
+    color: var(--color-text);
 }
 .img-thumbnail {
     background-color: var(--color-bg);
@@ -123,6 +134,7 @@ body {
 
 /* FILTER BY DATE */
 #dateFilter{
+    cursor: pointer;
     background-color: var(--color-button);
     border-color: var(--color-border);
     color: var(--color-text);

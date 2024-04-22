@@ -37,8 +37,8 @@ h2{
 #videoContainer {
     overflow: hidden;
     margin-bottom: 20px;
-    width: 640px;
-    height: 480px; 
+    /* width: 640px;
+    height: 480px;  */
     background-color: var(--color-black); 
 }
 
@@ -62,8 +62,9 @@ h2{
 
 .controls {
     display: flex;
-    width: 640px; 
-    justify-content: space-between; 
+    /* width: 640px; 
+    justify-content: space-between;  */
+    text-wrap: nowrap; 
 }
 
 .btn {
@@ -154,5 +155,43 @@ h2{
     color: var(--color-button-hover);
     text-decoration: none;
     cursor: pointer;
+}
+
+
+
+
+/* .container {
+    width: 90%; 
+    max-width: 1200px; 
+    margin: 20px auto; 
+  }
+  
+  #videoContainer {
+    width: 100%;
+    max-width: 100%; 
+    height: auto;
+    margin-bottom: 20px; 
+  }
+  
+  .controls {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center; 
+  }
+  
+  .btn {
+    flex-basis: calc(50% - 8px); 
+    margin: 4px; 
+  } */
+video, canvas{
+    width: 100%!important;
+    display: flex;
+}
+  
+ 
+@media screen and (min-width: 768px) {
+    .btn {
+        flex-basis: calc(33.33% - 8px); 
+    }
 }
 
