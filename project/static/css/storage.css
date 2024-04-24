@@ -111,13 +111,19 @@ body {
     z-index: 1051;
 }
 
+.close-preview:hover{
+    color: var(--color-button-hover);
+}
+
 /* NO RECORDINGS */
 #message {
-    display: flex;
+    /* display: flex; */
+    display: none;
     justify-content: center;
     align-items: center; 
-    height: 70vh; 
+    /* height: 70vh;  */
     width: 100%; 
+    padding-top: 10%;
 }
 .no-data {
     color: var(--color-info);
@@ -138,4 +144,34 @@ body {
     background-color: var(--color-button);
     border-color: var(--color-border);
     color: var(--color-text);
+}
+
+#pagination{
+    display: none;
+    background-color: var(--color-modal);
+    padding: 10px;
+}
+
+.btn-pagination {
+    background-color: transparent;
+    color: var(--color-text);
+    border: none;
+    margin: 0 5px;
+}
+
+.btn-pagination:hover {
+    color: var(--color-button-hover);
+}
+
+.active{
+    color: var(--color-button);
+}
+
+.disabled{
+    cursor: not-allowed;
+    color: var(--color-info);
+}
+
+.disabled:hover{
+    color: var(--color-info);
 }

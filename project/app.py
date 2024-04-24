@@ -10,17 +10,9 @@ import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 # from moviepy.editor import VideoFileClip
-# import re #regex
-# from wtforms import Form, StringField, PasswordField, validators
-# from email_validator import validate_email, EmailNotValidError
-from flask_mail import Mail, Message
-import time
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText    
-from email.mime.base import MIMEBase
-from email import encoders
+from flask_mail import Mail, Message
+
 
 # Load environment variables from .env
 load_dotenv() 
@@ -116,7 +108,7 @@ def index():
 @app.route('/home')
 def home():
     if 'user' in session:
-        username = session.get('username', 'Oaspete')
+        username = session.get('username', '')
         return render_template('home.html', username=username)
     else:
         return redirect(url_for('index'))
@@ -175,7 +167,7 @@ def gen_frames():
 @app.route('/streaming')
 def streaming():
     if 'user' in session:
-        username = session.get('username', 'Oaspete')
+        username = session.get('username', '')
         return render_template('streaming.html', username=username)
     else:
         return redirect(url_for('index'))
@@ -219,27 +211,6 @@ def upload_image():
     # Clean up the temporary file
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
-
-# def send_email(video):
-#     # video_path = 'D:\\Visual Studio Code\\python\\streamingApp\\project\\static\\img\\videotest.webm'
-
-#     # if os.path.exists(video_path):
-#     with app.open_resource(video) as video_file:
-#         video_data = video_file.read()
-#         message = Message(
-#             subject = 'Test',
-#             recipients = ['proiecte.facultate10@gmail.com'],
-#             sender = 'mailtrap@demomailtrap.com'
-#         )
-
-#         message.body = 'Hello, bla bla!'
-#         message.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
-
-#         mail.send(message)
-
-#         return 'Message sent!'
-#     # else:
-#     #     return 'Video file not found!'
 
 def send_email(video_path):
     with open(video_path, 'rb') as video_file:
@@ -309,12 +280,11 @@ def upload_video():
 
     return jsonify({"message": "The recording has been successfully saved!"})
 
-
 # storage
 @app.route('/storage')
 def storage_page():
     if 'user' in session:
-        username = session.get('username', 'Oaspete')
+        username = session.get('username', '')
         return render_template('storage.html', username=username)
     else:
         return redirect(url_for('index'))
@@ -400,7 +370,6 @@ def get_videos():
                 })
 
     return jsonify(videos)
-
 
 # delete image
 @app.route('/delete_image', methods=['POST'])
@@ -533,7 +502,7 @@ def update_username_in_session(new_username):
 @app.context_processor
 def inject_username():
     if 'user' in session:
-        username = session.get('username', 'Oaspete')
+        username = session.get('username', '')
         return dict(username=username)
     else:
         return dict(username=None)
