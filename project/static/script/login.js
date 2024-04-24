@@ -43,6 +43,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+
+    passwordFields.forEach(function (field) {
+        field.addEventListener('input', function () {
+            const toggle = document.querySelector('.password-toggle[data-target="' + this.id + '"]');
+            if (this.value.trim() !== '') {
+                toggle.style.display = 'inline-block';
+            } else {
+                toggle.style.display = 'none';
+            }
+        });
+    });
+
     const passwordToggles = document.querySelectorAll('.password-toggle');
 
     passwordToggles.forEach(function (toggle) {

@@ -1,3 +1,19 @@
+:root {
+    --color-border-hover: #fa698a;
+    --color-border: #cd294f;
+    --color-button-hover: #ff2770;
+    --color-button: #c72f62;
+    --color-error: #d43f3a;
+    --color-alert: #e2054f;
+    --color-bg: #191d2b;
+    --color-modal: #2c303a;
+    --color-info: #6a6f7d;
+    --color-text: #fff;
+    --color-opacity: rgba(0, 0, 0, 0.8);
+    --color-btn: rgba(255, 255, 255, 0.8);
+    --color-black: #000;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,49 +21,15 @@
 }
 
 body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: #191d2b;
-    color: #fff;
-    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
 }
 
 .container {
     margin: 0 auto;
 }
 
-.top-bar {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-}
-
-.user-info span {
-    font-size: 18px;
-    margin-right: 10px;
-}
-
-.btn-logout {
-    background-color: transparent;
-    border: 1px solid #fff;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 16px;
-    transition: all 0.3s ease;
-}
-
-.btn-logout:hover {
-    border: 1px solid #cd294f;
-	background-color: #c72f62;
-    color: #191d2b;
-}
 
 .button-container {
     display: flex;
@@ -70,18 +52,17 @@ body {
     margin: 10px;
     text-align: center;
     text-decoration: none;
-    border: 1px solid #cd294f;
-	background-color: #c72f62;
-    color: #fff;
+    border: 1px solid var(--color-border);
+	background-color: var(--color-button);
+    color: var(--color-text);
     transition: all 0.3s ease;
 }
 
-.btn-menu i,
-.btn-logout i {
+.btn-menu i {
     margin-right: 10px;
 }
 
 .btn-menu:hover {
     transform: scale(1.1);
-    background-color: #ff2770;
+    background-color: var(--color-button-hover);
 }

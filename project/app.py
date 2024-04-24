@@ -1,4 +1,4 @@
-from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify, flash
+from flask import Flask, session, render_template, request, redirect, url_for, Response, jsonify, flash, send_file
 import pyrebase
 import cv2
 from dotenv import load_dotenv
@@ -10,9 +10,9 @@ import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 # from moviepy.editor import VideoFileClip
-# import re #regex
-# from wtforms import Form, StringField, PasswordField, validators
-# from email_validator import validate_email, EmailNotValidError
+
+from flask_mail import Mail, Message
+
 
 # Load environment variables from .env
 load_dotenv() 
@@ -29,6 +29,17 @@ config ={
     "messagingSenderId": os.getenv('MESSAGING_SENDER_ID'),
     "appId": os.getenv('APP_ID')
 }
+
+app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
+app.config['MAIL_PORT']=587
+app.config['MAIL_USERNAME']='api'
+app.config['MAIL_PASSWORD']='b35f8d67f9dbcb2e687e6ae1e37cd20e'
+app.config['MAIL_USE_TLS']=True
+app.config['MAIL_USE_SSL']=False
+
+app.config['UPLOAD_FOLDER'] = 'project/static/tempFile'
+
+mail = Mail(app)
 
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
@@ -90,13 +101,14 @@ def index():
 
     return render_template('login.html', login_message=login_message, login_alert_class=alert_class)
 
+
 #######################################################################
 ############################# HOME PAGE ############################### 
 #######################################################################
 @app.route('/home')
 def home():
     if 'user' in session:
-        username = session.get('username', 'Oaspete')
+        username = session.get('username', '')
         return render_template('home.html', username=username)
     else:
         return redirect(url_for('index'))
@@ -155,7 +167,8 @@ def gen_frames():
 @app.route('/streaming')
 def streaming():
     if 'user' in session:
-        return render_template('streaming.html')
+        username = session.get('username', '')
+        return render_template('streaming.html', username=username)
     else:
         return redirect(url_for('index'))
 
@@ -199,6 +212,23 @@ def upload_image():
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
 
+def send_email(video_path):
+    with open(video_path, 'rb') as video_file:
+        video_data = video_file.read()
+        
+        message = Message(
+            subject='Subject',
+            recipients=['proiecte.facultate10@gmail.com'],
+            sender='mailtrap@demomailtrap.com'
+        )
+        message.body = 'Hello!'
+        message.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
+    
+        mail.send(message)
+
+        return 'Message sent!'
+
+    
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
@@ -228,12 +258,9 @@ def upload_video():
     filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
 
     # Salvarea temporară și încărcarea pe Firebase
-    temp_path = f"temp_{filename}"
+    temp_path = f"temp_{filename}.mp4"
     video_file.save(temp_path)
-
-    # Utilizează MoviePy pentru a afla durata videoclipului
-    # with VideoFileClip(temp_path) as video:
-    #     duration = video.duration  # Durata în secunde
+    send_email(temp_path)
 
     storage_path = f"LiveRecordings/{user_id}/{filename}"
     storage.child(storage_path).put(temp_path)
@@ -245,8 +272,6 @@ def upload_video():
             "size":  f"{file_size_in_mb:.2f} MB",
             "filename": filename,
             "storage_path": storage_path
-            # ,
-            # "duration": f"{duration:.2f} seconds"  # Adaugă durata aici
         }
     })
 
@@ -255,12 +280,12 @@ def upload_video():
 
     return jsonify({"message": "The recording has been successfully saved!"})
 
-
 # storage
 @app.route('/storage')
 def storage_page():
     if 'user' in session:
-        return render_template('storage.html')
+        username = session.get('username', '')
+        return render_template('storage.html', username=username)
     else:
         return redirect(url_for('index'))
 
@@ -346,7 +371,6 @@ def get_videos():
 
     return jsonify(videos)
 
-
 # delete image
 @app.route('/delete_image', methods=['POST'])
 def delete_image():
@@ -365,6 +389,123 @@ def delete_image():
         return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
+
+
+#######################################################################
+############################ PROFILE PAGE ############################# 
+#######################################################################
+@app.route('/profile')
+def profile():
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
+    user_email = session['user']
+    user_data = None
+
+    all_users = db.child("Users").get()
+    for user in all_users.each():
+        if user.val().get("email") == user_email:
+            user_data = user.val()
+            break
+
+    if user_data is None:
+        flash('User data not found.', 'danger')
+        return redirect(url_for('index'))
+
+    return render_template('profile.html', username=user_data['username'], user=user_data)
+
+
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    
+    user_id = session['user_id']
+    data = request.form
+
+    try:
+        if 'field' in data and 'value' in data:
+            field = data['field']
+            value = data['value']
+
+            db.child("Users").child(user_id).update({
+                field: value
+            })
+
+            if field == 'username':    
+                update_username_in_session(value)
+
+            success_message = "Profile updated successfully!"
+
+            return jsonify({'success': True, 'message': success_message})
+
+        else:
+            raise ValueError("Field or value missing in request.")
+
+    except Exception as e:
+        error_message = str(e)
+        return jsonify({'success': False, 'message': error_message})
+
+
+@app.route('/upload_profile_picture', methods=['POST'])
+def upload_profile_picture():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+    data = request.get_json()
+    image_data = data['image']
+    image_data = base64.b64decode(image_data.split(',')[1])
+    image = Image.open(BytesIO(image_data))
+
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    unique_filename = f"{user_id}_{timestamp}.png"
+    temp_path = f"temp_{unique_filename}"
+    image.save(temp_path)
+
+    storage_path = f"ProfilePictures/{user_id}/{unique_filename}"
+    storage.child(storage_path).put(temp_path)
+
+    db.child("UserProfilePictures").child(user_id).set({
+        "storage_path": storage_path
+    })
+
+    os.remove(temp_path)
+    return jsonify({"message": "Imaginea a fost încărcată cu succes!"})
+
+
+@app.route('/profile_picture')
+def get_profile_picture():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+    user_data = db.child("UserProfilePictures").child(user_id).get().val()
+
+    if user_data:
+        storage_path = user_data.get('storage_path', '')
+        print("Path: " + storage_path)
+       
+        try:
+            image_url = storage.child(storage_path).get_url(None)
+            return redirect(image_url)
+        except Exception as e:
+            print("Error getting image from Firebase Storage:", e)
+    
+    # default profile picture
+    return redirect('/static/img/avatar.jpg')
+
+# After updated the username in DB
+def update_username_in_session(new_username):
+    if 'user_id' in session:
+        session['username'] = new_username
+
+
+@app.context_processor
+def inject_username():
+    if 'user' in session:
+        username = session.get('username', '')
+        return dict(username=username)
+    else:
+        return dict(username=None)
 
 
 # logout function

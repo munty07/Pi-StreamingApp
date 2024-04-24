@@ -1,11 +1,28 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,800');
 
+:root {
+    --color-border-hover: #fa698a;
+    --color-border: #cd294f;
+    --color-button-hover: #ff2770;
+    --color-button: #c72f62;
+    --color-error: #d43f3a;
+    --color-alert: #e2054f;
+    --color-bg: #191d2b;
+    --color-modal: #2c303a;
+    --color-info: #6a6f7d;
+    --color-text: #fff;
+    --color-opacity: rgba(0, 0, 0, 0.8);
+    --color-btn: rgba(255, 255, 255, 0.8);
+    --color-black: #000;
+	--color-menu-hover: #3c414f;
+}
+
 * {
 	box-sizing: border-box;
 }
 
 body {
-	background: #191d2b;
+	background: var(--color-bg);
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -16,9 +33,9 @@ body {
 }
 
 .alert-danger {
-    background-color: #e2054f; 
-    border-color: #d43f3a;
-    color: #fff; 
+    background-color: var(--color-alert); 
+    border-color: var(--color-error);
+    color: var(--color-text); 
 }
 .alert {
     border-radius: 5px; 
@@ -30,8 +47,8 @@ body {
 }
 
 .error {
-    border-color: #d43f3a !important;
-    color: #d43f3a !important;
+    border-color: var(--color-error) !important;
+    color: var(--color-error) !important;
 }
 
 .error-icon {
@@ -45,7 +62,7 @@ body {
 }
 
 .error-icon i {
-    color: #d43f3a;
+    color: var(--color-error);
     font-size: 1.2em;
 }
 
@@ -56,14 +73,14 @@ body {
 	font-size: 13px;
 	cursor: pointer; 
 	right: 0px;
-	color:#ff2770
+	color: var(--color-button-hover)
 }
 
 
 h1 {
 	font-weight: bold;
 	margin: 0;
-	color: #fff;
+	color: var(--color-text);
 }
 
 h2 {
@@ -83,21 +100,21 @@ span {
 }
 
 a {
-	color: #fff;
+	color: var(--color-text);
 	font-size: 14px;
 	text-decoration: none;
 	margin: 15px 0;
 }
 a:hover{
-	color: #ff2770;
+	color: var(--color-button-hover);
 	text-decoration: underline;
 }
 
 button {
 	border-radius: 20px;
-	border: 1px solid #cd294f;
-	background-color: #c72f62;
-	color: #FFFFFF;
+	border: 1px solid var(--color-border);
+	background-color: var(--color-button);
+	color: var(--color-text);
 	font-size: 12px;
 	font-weight: bold;
 	padding: 12px 45px;
@@ -112,16 +129,16 @@ button:active {
 button:focus,
 button:hover {
 	outline: none;
-	background-color: #ff2770;
+	background-color: var(--color-button-hover);
 }
 button.ghost {
 	background-color: transparent;
-	border-color: #FFFFFF;
+	border-color: var(--color-text);
 	cursor: pointer;
 }
 
 form {
-	background-color: #2c303a;
+	background-color: var(--color-modal);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -142,9 +159,9 @@ form {
     background: transparent;
     border: none;
     outline: none;
-    color: #fff;
+    color: var(--color-text);
     font-weight: 600; 
-    border-bottom: 2px solid #fff;
+    border-bottom: 2px solid var(--color-text);
     width: 300px;
 }
 .input-box label{
@@ -152,7 +169,7 @@ form {
     left: 0;
     bottom: 10px;
     font-size: 15px;
-    color: #fff;
+    color: var(--color-text);
     pointer-events: none;
     transition: all 0.3s ease;
 }
@@ -161,18 +178,16 @@ form {
 .input-box label.active{
 	bottom: 22px;
     font-size: 13px;
-    color: #ff2770;
+    color: var(--color-button-hover);
 }
 
 .input-box input:focus{
-	border-bottom: 2px solid #cd294f;
+	border-bottom: 2px solid var(--color-border);
 }
 
 .container {
-	background-color: #2c303a;
+	background-color: var(--color-modal);
 	border-radius: 10px;
-  	/* box-shadow: 0 14px 28px rgba(0,0,0,0.25),
-			0 10px 10px rgba(0,0,0,0.22); */
 	box-shadow: 0 7px 111px 0 rgb(205 41 79), 0 6px 20px 0 rgba(225, 142, 217, 0.19);
 	position: relative;
 	overflow: hidden;
@@ -234,11 +249,11 @@ form {
 }
 
 .overlay {
-	background: #c72f62;
+	background: var(--color-button);
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: 0 0;
-	color: #FFFFFF;
+	color: var(--color-text);
 	position: relative;
 	left: -100%;
 	height: 100%;
@@ -248,8 +263,8 @@ form {
 }
 
 .overlay button:hover{
-	background: #ff2770;
-	border: 2px solid #cd294f;
+	background: var(--color-button-hover);
+	border: 2px solid var(--color-border);
 }
 
 .container.right-panel-active .overlay {
