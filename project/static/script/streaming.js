@@ -223,10 +223,12 @@ window.onload = function () {
         if (window.stream) {
             if (recording) {
                 stopRecording();
+                spinner.style.display = 'block';
                 recordingButton.textContent = 'Start Recording';
                 recording = false;
             } else {
                 startRecording();
+                spinner.style.display = 'none';
                 recordingButton.textContent = 'Stop Recording';
                 recording = true;
             }

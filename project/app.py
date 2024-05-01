@@ -10,8 +10,12 @@ import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 # from moviepy.editor import VideoFileClip
-
 from flask_mail import Mail, Message
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 
 # Load environment variables from .env
@@ -228,7 +232,33 @@ def send_email(video_path):
 
         return 'Message sent!'
 
-    
+def mail(video_path, toaddr):
+    fromaddr = "proiecte.facultate10@gmail.com"
+
+    msg = MIMEMultipart()
+
+    msg['From'] = fromaddr
+    msg['To'] = toaddr
+    msg['Subject'] = "Mesaj test"
+
+    body = "Acesta este un mesaj de test."
+    msg.attach(MIMEText(body, 'plain'))
+    #msg.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
+    attachment = open(video_path, "rb")
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload((attachment).read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', "attachment; filename= %s" % 'video.mp4')
+    msg.attach(part)
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(fromaddr, "lnzsceoxurqexcvq")
+    text = msg.as_string()
+    server.sendmail(fromaddr, toaddr, text)
+    server.quit()
+
+    return 'Message sent!'
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
@@ -260,7 +290,10 @@ def upload_video():
     # Salvarea temporară și încărcarea pe Firebase
     temp_path = f"temp_{filename}.mp4"
     video_file.save(temp_path)
-    send_email(temp_path)
+    #send_email(temp_path)
+    email = session['user']
+    print('Mail: ', email)
+    mail(temp_path, email)
 
     storage_path = f"LiveRecordings/{user_id}/{filename}"
     storage.child(storage_path).put(temp_path)
