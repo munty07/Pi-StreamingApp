@@ -23,6 +23,7 @@
   overflow: hidden;
   display: flex; 
   align-items: center; 
+  z-index: 2;
 }
 
 .menu li a {
@@ -91,6 +92,9 @@
   .menu{
     display: block;
     text-align: right;
+    position: fixed;
+    width: 92vw;
+    z-index: 5;
   }
   
   .burger-icon {

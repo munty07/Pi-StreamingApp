@@ -20,18 +20,20 @@
     padding: 0;
 }
 
+
+
 body {
     font-family: Arial, sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text);
 }
 
-.container {
-    margin: 0 auto;
-}
-
-
 .button-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
     display: flex;
     justify-content: center;
     align-items: center;

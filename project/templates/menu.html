@@ -14,7 +14,7 @@
             <li class="{% if active_page == 'streaming' %}active{% endif %}"><a href="{{ url_for('streaming') }}">Streaming</a></li>
             <li class="{% if active_page == 'storage' %}active{% endif %}"><a href="{{ url_for('storage_page') }}">Storage</a></li>
             <li class="{% if active_page == 'profile' %}active{% endif %}"><a href="{{ url_for('profile') }}">Profile</a></li>
-            <li class="user-info"><span>{{ username }}</span><a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a></li>
+            <li class="user-info"><span id="menu-username">{{ username }}</span><a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i>Log Out</a></li>
             
         </ul>
         <script>

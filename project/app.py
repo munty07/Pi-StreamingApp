@@ -95,6 +95,7 @@ def index():
             for user in all_users.each():
                 if user.val().get("email") == email:
                     session['user'] = email
+                    session['name'] = user.val().get("name")
                     session['username'] = user.val().get("username")  
                     return redirect(url_for('home'))  
             login_message = 'Incorrect email or password. Please try again.'
@@ -216,23 +217,8 @@ def upload_image():
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
 
-def send_email(video_path):
-    with open(video_path, 'rb') as video_file:
-        video_data = video_file.read()
-        
-        message = Message(
-            subject='Subject',
-            recipients=['proiecte.facultate10@gmail.com'],
-            sender='mailtrap@demomailtrap.com'
-        )
-        message.body = 'Hello!'
-        message.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
-    
-        mail.send(message)
 
-        return 'Message sent!'
-
-def mail(video_path, toaddr):
+def send_email(video_path, toaddr):
     fromaddr = "proiecte.facultate10@gmail.com"
 
     msg = MIMEMultipart()
@@ -290,10 +276,10 @@ def upload_video():
     # Salvarea temporară și încărcarea pe Firebase
     temp_path = f"temp_{filename}.mp4"
     video_file.save(temp_path)
-    #send_email(temp_path)
+  
+    # send email with video
     email = session['user']
-    print('Mail: ', email)
-    mail(temp_path, email)
+    send_email(temp_path, email)
 
     storage_path = f"LiveRecordings/{user_id}/{filename}"
     storage.child(storage_path).put(temp_path)
@@ -526,9 +512,33 @@ def get_profile_picture():
     # default profile picture
     return redirect('/static/img/avatar.jpg')
 
-# After updated the username in DB
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    current_password = request.form.get('current_password')
+    new_password = request.form.get('new_password')
+    email = session['user']
+
+    print("Email: ", email)
+    print("Current: ", current_password)
+    print("New: ", new_password)
+
+    # Validează parola veche și actualizează parola nouă în Firebase Authentication
+    try:
+        # Autentifică utilizatorul cu parola veche
+        user = auth.sign_in_with_email_and_password(session['user'], current_password)
+
+        # Actualizează parola în Firebase Authentication
+        auth.update_user(user['localId'], password=new_password)
+
+        return jsonify({'success': True, 'message': 'Password changed successfully!'})
+    except Exception as e:
+        print("Error - change password:", e)
+        return jsonify({'success': False, 'message': 'Failed to change password. Please try again.'})
+
+
+# After updated the name in DB
 def update_username_in_session(new_username):
-    if 'user_id' in session:
+    if 'user' in session:
         session['username'] = new_username
 
 
