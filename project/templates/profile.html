@@ -26,7 +26,7 @@
                 </div>
             </div>
 
-            <h2  class="show-username">{{ user.email }}</h2>
+            <h2 id="emailAddress">{{ user.email }}</h2>
             <br>
             <div class="user-details">
                 <div class="info-item">
@@ -76,7 +76,9 @@
 
                 <div class="col">
                     <a href="#" id="changePasswordLink">Change password</a>
+                    <div id="changePasswordMessage" class="alert mt-3" role="alert" style="display: none;"></div>
                 </div>
+                
             </div>
         </div>
     </div>

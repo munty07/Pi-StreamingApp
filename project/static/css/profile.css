@@ -361,3 +361,23 @@ button {
 .password-toggle i:hover {
     color: var(--color-button-hover); 
 }
+
+
+
+
+
+.alert-success {
+    background-color: var(--color-button-hover); 
+    border-color: var(--color-button-hover); 
+    color: var(--color-text); 
+}
+.alert-danger {
+    background-color: var(--color-alert); 
+    border-color: var(--color-error);
+    color: var(--color-text); 
+}
+.alert {
+    border-radius: 5px; 
+    padding: 15px; 
+    margin-top: 10px;
+}

@@ -158,7 +158,7 @@ def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def gen_frames():
-    camera = cv2.VideoCapture(0)  # 0 for web camera
+    camera = cv2.VideoCapture(0) 
     while True:
         success, frame = camera.read()
         if not success:
@@ -191,7 +191,6 @@ def upload_image():
     image_data = base64.b64decode(image_data.split(',')[1])
     image = Image.open(BytesIO(image_data))
 
-    # Generate a unique identifier for this capture
     unique_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
@@ -199,12 +198,10 @@ def upload_image():
     temp_path = f"temp_{unique_filename}"
     image.save(temp_path)
 
-    # Specify the folder in Firebase Storage and upload the file
     storage_path = f"LiveCaptures/{user_id}/{unique_filename}"
     storage.child(storage_path).put(temp_path)
     file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
 
-    # Store metadata in Realtime Database under the structured path
     db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).set({
         "details": {
             "timestamp": date_time,
@@ -213,14 +210,13 @@ def upload_image():
             "storage_path": storage_path
         }
     })
-    # Clean up the temporary file
+
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
 
 
 def send_email(video_path, toaddr):
     fromaddr = "proiecte.facultate10@gmail.com"
-
     msg = MIMEMultipart()
 
     msg['From'] = fromaddr
@@ -229,7 +225,7 @@ def send_email(video_path, toaddr):
 
     body = "Acesta este un mesaj de test."
     msg.attach(MIMEText(body, 'plain'))
-    #msg.attach(filename='video.mp4', content_type='video/mp4', data=video_data)
+
     attachment = open(video_path, "rb")
     part = MIMEBase('application', 'octet-stream')
     part.set_payload((attachment).read())
@@ -273,7 +269,6 @@ def upload_video():
     unique_id = str(uuid.uuid4())
     filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
 
-    # Salvarea temporară și încărcarea pe Firebase
     temp_path = f"temp_{filename}.mp4"
     video_file.save(temp_path)
   
@@ -294,7 +289,6 @@ def upload_video():
         }
     })
 
-    # Șterge fișierul temporar
     os.remove(temp_path)
 
     return jsonify({"message": "The recording has been successfully saved!"})
@@ -512,29 +506,20 @@ def get_profile_picture():
     # default profile picture
     return redirect('/static/img/avatar.jpg')
 
+
 @app.route('/change_password', methods=['POST'])
 def change_password():
-    current_password = request.form.get('current_password')
-    new_password = request.form.get('new_password')
-    email = session['user']
+    email = request.form.get('email')
 
-    print("Email: ", email)
-    print("Current: ", current_password)
-    print("New: ", new_password)
-
-    # Validează parola veche și actualizează parola nouă în Firebase Authentication
     try:
-        # Autentifică utilizatorul cu parola veche
-        user = auth.sign_in_with_email_and_password(session['user'], current_password)
+        auth.send_password_reset_email(email)
+        message = 'Check your email for the password reset link.'
+        alert_class = 'success'
+    except:
+        message = 'Error sending the password reset email.'
+        alert_class = 'danger'
 
-        # Actualizează parola în Firebase Authentication
-        auth.update_user(user['localId'], password=new_password)
-
-        return jsonify({'success': True, 'message': 'Password changed successfully!'})
-    except Exception as e:
-        print("Error - change password:", e)
-        return jsonify({'success': False, 'message': 'Failed to change password. Please try again.'})
-
+    return jsonify({'message': message, 'alert_class': alert_class})
 
 # After updated the name in DB
 def update_username_in_session(new_username):

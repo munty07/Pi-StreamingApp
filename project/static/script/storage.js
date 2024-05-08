@@ -1,173 +1,3 @@
-// $(document).ready(function () {
-//     var currentPage = 1;
-//     var itemsPerPage = 15;
-
-//     $('#dateFilter').val("");
-//     loadCaptures();
-//     //loadCaptures('', currentPage, itemsPerPage);
-
-//     if (localStorage.getItem('autoShowLiveCaptures') === 'true') {
-//         localStorage.setItem('autoShowLiveCaptures', 'false');
-//         currentState = 'captures';
-//         $('#dateFilter').val("");
-//         loadCaptures();
-//         //loadCaptures('', currentPage, itemsPerPage);
-//     }
-
-//     if (localStorage.getItem('autoShowLiveRecordings') === 'true') {
-//         localStorage.setItem('autoShowLiveRecordings', 'false');
-//         currentState = 'recordings';
-//         $('#dateFilter').val("");
-//         loadRecordings();
-//     }
-// });
-// var currentState = 'captures';
-
-// // FILTER BY DATE
-// $('#dateFilter').change(function () {
-//     if (currentState == 'captures') {
-//         loadCaptures($(this).val());
-//     } else {
-//         loadRecordings($(this).val());
-//     }
-// });
-
-// // IMAGES
-// $('#liveCapturesBtn').click(function () {
-//     currentState = 'captures';
-//     $('#dateFilter').val("");
-//     currentPage = 1;
-//     // loadCaptures('', currentPage, itemsPerPage);
-//     loadCaptures();
-// });
-
-
-// function renderPagination(totalPages, currentPage) {
-//     var paginationContainer = document.getElementById('pagination');
-//     paginationContainer.innerHTML = '';
-
-//     if (totalPages <= 1) {
-//         return;
-//     }
-
-//     var prevPageBtn = createPaginationButton('<<', currentPage > 1 ? currentPage - 1 : 1);
-//     paginationContainer.appendChild(prevPageBtn);
-
-//     if (currentPage > 3) {
-//         paginationContainer.appendChild(createPaginationButton('1', 1));
-//         paginationContainer.appendChild(createPaginationButton('...', null));
-//     }
-
-//     for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-//         paginationContainer.appendChild(createPaginationButton(i.toString(), i));
-//     }
-
-//     if (currentPage < totalPages - 2) {
-//         paginationContainer.appendChild(createPaginationButton('...', null));
-//         paginationContainer.appendChild(createPaginationButton(totalPages.toString(), totalPages));
-//     }
-
-//     var nextPageBtn = createPaginationButton('>>', currentPage < totalPages ? currentPage + 1 : totalPages);
-//     paginationContainer.appendChild(nextPageBtn);
-// }
-
-// function createPaginationButton(label, page) {
-//     var button = document.createElement('button');
-//     button.textContent = label;
-//     button.classList.add('btn-pagination');
-//     button.dataset.page = page;
-//     button.onclick = function () {
-//         var page = parseInt(this.dataset.page);
-//         loadPage(page);
-//     };
-//     return button;
-// }
-
-
-
-// function loadCaptures(selectedDate = '') {
-//     $.ajax({
-//         url: '/get_images',
-//         data: { date: selectedDate },
-//         type: 'GET',
-//         success: function (response) {
-//             var imagesContainer = $('#imagesContainer');
-//             var messageContainer = $('#message');
-//             var paginationContainer = $('#pagination');
-
-//             imagesContainer.empty();
-//             messageContainer.empty();
-//             paginationContainer.empty();
-
-//             if (response.length === 0) {
-//                 messageContainer.append('<div class="text-center no-data"><i class="fas fa-images" aria-hidden="true"></i><p>No photos available.</p></div>');
-//             } else {
-//                 messageContainer.empty();
-//                 var currentPage = 1;
-//                 var itemsPerPage = 15;
-//                 var totalPages = Math.ceil(response.length / itemsPerPage);
-//                 renderPagination(totalPages, currentPage);
-
-//                 var startIndex = (currentPage - 1) * itemsPerPage;
-//                 var endIndex = Math.min(startIndex + itemsPerPage, response.length);
-//                 for (var i = startIndex; i < endIndex; i++) {
-//                     var image = response[i];
-//                     var imgHtml = `
-//                         <div class="col-md-4 image-card">
-//                             <img src="${image.url}" class="img-fluid img-thumbnail clickable" data-imgsrc="${image.url}">
-//                             <div class="image-info">
-//                                 <p>Size: ${image.size}</p>
-//                                 <p>${image.timestamp}</p>
-//                             </div>
-//                             <div class="overlay-buttons">
-//                                 <button class="btn btn-custom preview-btn clickable" data-imgsrc="${image.url}"><i class="fa fa-eye"></i></button>
-//                                 <button class="btn btn-danger delete-btn" data-storage-path="${image.storage_path}" data-unique-id="${image.unique_id}"><i class="fa fa-trash"></i></button>
-//                             </div>
-//                         </div>
-//                     `;
-//                     imagesContainer.append(imgHtml);
-//                 }
-
-//                 $('.clickable').on('click', function () {
-//                     var imageSrc = $(this).data('imgsrc');
-//                     showPreview(imageSrc);
-//                 });
-
-//                 $('.delete-btn').on('click', function () {
-//                     if (!confirm('Are you sure you want to delete this image?')) {
-//                         return;
-//                     }
-
-//                     var uniqueId = $(this).data('unique-id');
-//                     var storagePath = $(this).data('storage-path');
-
-//                     $.ajax({
-//                         url: '/delete_image',
-//                         type: 'POST',
-//                         contentType: 'application/json',
-//                         data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
-//                         success: function (response) {
-//                             alert(response.message);
-//                             if (response.status === 'success') {
-//                                 loadCaptures(selectedDate, page, itemsPerPage); // Reîncărcați imaginile după ștergere
-//                             }
-//                         },
-//                         error: function (error) {
-//                             console.log(error);
-//                             alert('Failed to delete the image.' + error);
-//                         }
-//                     });
-//                 });
-//             }
-//         },
-//         error: function () {
-//             alert('Error loading images.');
-//         }
-//     });
-// }
-
-
-
 $(document).ready(function () {
     var currentPage = 1;
     var itemsPerPage = 15;
@@ -322,30 +152,67 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
                     showPreview(imageSrc);
                 });
 
+
+
                 $('.delete-btn').on('click', function () {
-                    if (!confirm('Are you sure you want to delete this image?')) {
-                        return;
-                    }
 
                     var uniqueId = $(this).data('unique-id');
                     var storagePath = $(this).data('storage-path');
 
-                    $.ajax({
-                        url: '/delete_image',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
-                        success: function (response) {
-                            alert(response.message);
-                            if (response.status === 'success') {
-                                loadCaptures(selectedDate); // Reload images after deletion
-                            }
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: 'You won\'t be able to revert this!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: 'var(--color-button)',
+                        cancelButtonColor: 'var(--color-menu-hover)',
+                        confirmButtonText: 'Yes, delete it!',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            content: 'swal-custom-content',
+                            cancelButton: 'swal-custom-cancel-button',
+                            confirmButton: 'swal-custom-confirm-button',
                         },
-                        error: function (error) {
-                            console.log(error);
-                            alert('Failed to delete the image.' + error);
+                        background: 'var(--color-modal)'
+
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: '/delete_image',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                success: function (response) {
+                                    Swal.fire({
+                                        title: 'Deleted!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        customClass: {
+                                            popup: 'swal-custom-popup',
+                                            title: 'swal-custom-title',
+                                            content: 'swal-custom-content'
+                                        },
+                                        confirmButtonColor: 'var(--color-button)'
+                                    });
+
+                                    if (response.status === 'success') {
+                                        loadCaptures(selectedDate); // Reload images after deletion
+                                    }
+                                },
+                                error: function (error) {
+                                    console.log(error);
+
+                                    Swal.fire(
+                                        'Error!',
+                                        'Failed to delete the image. ' + error,
+                                        'error'
+                                    );
+                                }
+                            });
                         }
                     });
+
                 });
             }
         },
