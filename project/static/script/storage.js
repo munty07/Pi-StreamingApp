@@ -318,6 +318,7 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
 
                 $('.clickable').on('click', function () {
                     var imageSrc = $(this).data('imgsrc');
+                    console.log("Img: " + imageSrc);
                     showPreview(imageSrc);
                 });
 

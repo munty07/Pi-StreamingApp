@@ -27,9 +27,20 @@ $(document).ready(function () {
             // Validare în funcție de câmpul specific
             switch (field) {
                 case 'username':
+                    if (!/^\S*$/.test(newValue)) {
+                        errorIcon.show();
+                        errorIcon.attr('title', 'Username cannot contain spaces.');
+                        $(this).addClass('error');
+                    } else {
+                        errorIcon.hide();
+                        errorIcon.removeAttr('title');
+                        $(this).removeClass('error');
+                    }
+                    break;
+                case 'name':
                     if (!/^[a-zA-Z -]*$/.test(newValue)) {
                         errorIcon.show();
-                        errorIcon.attr('title', 'Username must contain only letters, hyphens, and spaces.');
+                        errorIcon.attr('title', 'Name must contain only letters, hyphens, and spaces.');
                         $(this).addClass('error');
                     } else {
                         errorIcon.hide();
@@ -102,9 +113,10 @@ $(document).ready(function () {
             },
             success: function (response) {
                 $inputField.replaceWith('<span id="profile-' + field + '" class="editable">' + newValue + '</span>');
+
                 if (field == 'username') {
-                    var showUsername = $('.show-username');
-                    showUsername.text(newValue);
+                    var showName = $('#menu-username');
+                    showName.text(newValue);
                 }
 
                 $editIcon.show();
@@ -237,4 +249,98 @@ $(document).ready(function () {
         $('#previewOverlay').fadeOut();
     });
 
+
+
+
+
+
+
+    // Obțineți referințe către elemente HTML
+    var changePasswordLink = document.getElementById('changePasswordLink');
+    var changePasswordModal = document.getElementById('changePasswordModal');
+    var closeModal = document.getElementById('closeModal');
+    var cancelButton = document.getElementById('cancelButton');
+
+    // Deschideți modalul atunci când se face clic pe link-ul "Change password"
+    changePasswordLink.addEventListener('click', function () {
+        changePasswordModal.style.display = 'block';
+    });
+
+    // Închideți modalul atunci când se face clic pe butonul "Close"
+    closeModal.addEventListener('click', function () {
+        changePasswordModal.style.display = 'none';
+    });
+
+    // Închideți modalul atunci când se face clic pe butonul "Cancel"
+    cancelButton.addEventListener('click', function () {
+        changePasswordModal.style.display = 'none';
+    });
+
+
+
+
+    // Trimite cererea pentru schimbarea parolei când se apasă butonul "Change Password"
+    $('#changePasswordButton').click(function () {
+        var currentPassword = $('#currentPassword').val();
+        var newPassword = $('#newPassword').val();
+        var confirmNewPassword = $('#confirmNewPassword').val();
+
+        // Validează că noile parole sunt identice
+        if (newPassword !== confirmNewPassword) {
+            alert('New passwords do not match.');
+            return;
+        }
+
+        // Trimite cererea pentru schimbarea parolei la server
+        $.ajax({
+            url: '/change_password',
+            type: 'POST',
+            data: {
+                current_password: currentPassword,
+                new_password: newPassword
+            },
+            success: function (response) {
+
+                alert(response.message);
+                if (response.success) {
+                    $('#changePasswordModal').modal('hide');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error(error);
+            }
+        });
+    });
+
+    $('input[type="password"]').on('input', function () {
+        togglePasswordToggleVisibility($(this));
+    });
+
+    // Ascultă evenimentul de clic pe iconița de vizualizare a parolei
+    $('.password-toggle').on('click', function () {
+        const targetId = $(this).data('target');
+        const targetInput = $('#' + targetId);
+
+        togglePasswordVisibility(targetInput, $(this));
+    });
+
+
+    function togglePasswordToggleVisibility(input) {
+        const toggle = input.next('.password-toggle');
+        if (input.val().trim() !== '') {
+            toggle.show();
+        } else {
+            toggle.hide();
+        }
+    }
+
+    function togglePasswordVisibility(input, toggle) {
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            toggle.html('<i class="fas fa-eye-slash"></i>');
+        } else {
+            input.attr('type', 'password');
+            toggle.html('<i class="fas fa-eye"></i>');
+        }
+    }
 });
