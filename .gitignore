@@ -166,6 +166,7 @@ testProject/
 project/Scripts/
 project/pyvenv.cfg
 project/share/
+project/exemplu1
 
 #
 node_modules/

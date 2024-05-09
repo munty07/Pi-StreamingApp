@@ -153,21 +153,6 @@ def reset_password():
 #######################################################################
 ########################### STREAMING PAGE ############################ 
 #######################################################################
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-def gen_frames():
-    camera = cv2.VideoCapture(0) 
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/streaming')
 def streaming():
@@ -176,6 +161,116 @@ def streaming():
         return render_template('streaming.html', username=username)
     else:
         return redirect(url_for('index'))
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def generate_frames():
+    
+    try:
+        camera = cv2.VideoCapture(0)
+        out = None
+        recording = False
+        no_motion_timer = 0
+
+        while True:
+            success, frame = camera.read()
+
+            if not success:
+                break
+
+            else:
+                detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                faces = detector.detectMultiScale(gray, 1.1, 7)
+
+                if len(faces) > 0:
+                    if not recording:
+                        print('START RECORDING')
+                        out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'DIVX'), 20.0, (640, 480))
+                        recording = True
+                        no_motion_timer = 0
+                else:
+                    no_motion_timer += 1
+                    if recording:
+                        if no_motion_timer >= 3 * 20: # 3 sec - rata 20 cadre/sec
+                            print('STOP RECORDING')
+                            out.release()
+                            recording = False
+                            toaddr = "poli.mastersiaps@gmail.com"
+                            send_email("output.avi", toaddr)
+                            # upload_video("output.avi")
+
+                if recording:
+                    out.write(frame)
+
+                for (x, y, w, h) in faces:
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    except Exception as e:
+        print("An error occurred:", e)
+
+
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg', 'avi'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+@app.route('/upload_auto_video', methods=['POST'])
+def upload_auto_video():
+    try:
+        if 'user' not in session:
+            return jsonify({"error": "User not authenticated"}), 403
+
+        user_id = session['user_id']
+
+        if 'video' not in request.files:
+            print('novideo')
+            return jsonify({"error": "No video part"}), 400
+
+        video_file = request.files['video']
+        if video_file.filename == '':
+            print('noname')
+            return jsonify({"error": "No selected video"}), 400
+
+        if not allowed_file(video_file.filename):
+            print('invalid')
+            return jsonify({"error": "Invalid file type"}), 400
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+        unique_id = str(uuid.uuid4())
+        filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
+
+        temp_path = f"temp_auto_{filename}.mp4"
+        video_file.save(temp_path)
+
+        storage_path = f"AutoLiveRecordings/{user_id}/{filename}"
+        storage.child(storage_path).put(temp_path)
+        file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
+
+        db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).child(unique_id).set({
+            "details": {
+                "timestamp": date_time,
+                "size":  f"{file_size_in_mb:.2f} MB",
+                "filename": filename,
+                "storage_path": storage_path
+            }
+        })
+        print('success')
+        os.remove(temp_path)
+
+        return jsonify({"message": "The recording has been successfully saved!"})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to upload video: {}'.format(str(e))}), 500
 
 #######################################################################
 ############################ STORAGE PAGE ############################# 
@@ -221,9 +316,9 @@ def send_email(video_path, toaddr):
 
     msg['From'] = fromaddr
     msg['To'] = toaddr
-    msg['Subject'] = "Mesaj test"
+    msg['Subject'] = "TEST MSG - Person detected"
 
-    body = "Acesta este un mesaj de test."
+    body = "A person has been detected. Video footage is attached."
     msg.attach(MIMEText(body, 'plain'))
 
     attachment = open(video_path, "rb")
@@ -242,10 +337,12 @@ def send_email(video_path, toaddr):
 
     return 'Message sent!'
 
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# def allowed_file(filename):
+#     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
+#     return '.' in filename and \
+#            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route('/upload_video', methods=['POST'])
 def upload_video():
@@ -368,18 +465,24 @@ def get_videos():
                 continue 
 
             url = storage.child(storage_path).get_url(None)
+            unique_id = video.key()
+
             if selected_date:
                 if video_date == selected_date:
                     videos.append({
                         'url': url,
                         'size': size,
-                        'timestamp': timestamp
+                        'timestamp': timestamp,
+                        'unique_id': unique_id,
+                        'storage_path': storage_path
                     })
             else:
                 videos.append({
                     'url': url,
                     'size': size,
-                    'timestamp': timestamp
+                    'timestamp': timestamp,
+                    'unique_id': unique_id,
+                    'storage_path': storage_path
                 })
 
     return jsonify(videos)
@@ -403,6 +506,24 @@ def delete_image():
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
 
+# delete video
+@app.route('/delete_video', methods=['POST'])
+def delete_video():
+    if 'user' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 403
+
+    data = request.get_json()
+    user_id = session['user_id']
+    unique_id = data.get('unique_id')
+    #storage_path = data.get('storage_path')
+
+    try:
+        #storage.child(storage_path).delete(storage_path)
+        db.child("UserCaptures").child("LiveRecordings").child(user_id).child(unique_id).remove()
+
+        return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to delete video: {}'.format(str(e))}), 500
 
 #######################################################################
 ############################ PROFILE PAGE ############################# 

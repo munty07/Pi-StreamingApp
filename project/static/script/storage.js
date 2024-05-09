@@ -1,6 +1,5 @@
 $(document).ready(function () {
     var currentPage = 1;
-    var itemsPerPage = 15;
 
     $('#dateFilter').val("");
     loadCaptures();
@@ -45,31 +44,23 @@ function renderPagination(totalPages, currentPage) {
     var paginationContainer = $('#pagination');
     paginationContainer.empty();
 
-    if (totalPages <= 1) {
+    if (totalPages < 1) {
+        paginationContainer.hide();
         return;
-    }
-
-    if (currentPage === 1) {
-        paginationContainer.append(createPaginationButton('<<', 1, true, true));
-        paginationContainer.append(createPaginationButton('<', 1, true, true));
     } else {
-        paginationContainer.append(createPaginationButton('<<', 1));
-        paginationContainer.append(createPaginationButton('<', currentPage > 1 ? currentPage - 1 : 1));
+        paginationContainer.show();
     }
 
-    // Add current page and surrounding pages
+    paginationContainer.append(createPaginationButton('<<', 1, currentPage === 1, currentPage === 1));
+    paginationContainer.append(createPaginationButton('<', currentPage > 1 ? currentPage - 1 : 1, currentPage === 1, currentPage === 1));
+
     for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
         paginationContainer.append(createPaginationButton(i.toString(), i, i === currentPage));
     }
 
-    // Add next page button
-    if (currentPage === totalPages) {
-        paginationContainer.append(createPaginationButton('>', totalPages, true, true));
-        paginationContainer.append(createPaginationButton('>>', totalPages, true, true));
-    } else {
-        paginationContainer.append(createPaginationButton('>', currentPage < totalPages ? currentPage + 1 : totalPages));
-        paginationContainer.append(createPaginationButton('>>', totalPages));
-    }
+    paginationContainer.append(createPaginationButton('>', currentPage < totalPages ? currentPage + 1 : totalPages, currentPage === totalPages, currentPage === totalPages));
+    paginationContainer.append(createPaginationButton('>>', totalPages, currentPage === totalPages, currentPage === totalPages));
+
 }
 
 function createPaginationButton(label, page, isActive = false, isDisabled = false) {
@@ -152,8 +143,6 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
                     showPreview(imageSrc);
                 });
 
-
-
                 $('.delete-btn').on('click', function () {
 
                     var uniqueId = $(this).data('unique-id');
@@ -205,7 +194,7 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
 
                                     Swal.fire(
                                         'Error!',
-                                        'Failed to delete the image. ' + error,
+                                        'Failed to delete the image. ',
                                         'error'
                                     );
                                 }
@@ -221,8 +210,6 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
         }
     });
 }
-
-
 
 function showPreview(imageSrc) {
     $('#preview-overlay video').hide();
@@ -272,7 +259,7 @@ function loadRecordings(selectedDate = '', currentPage = 1) {
 
                 for (var i = startIndex; i < endIndex; i++) {
                     var video = response[i];
-                    // response.forEach(function (video) {
+
                     var videoHtml = `
                             <div class="col-md-4 video-card">
                                 <video controls class="img-fluid img-thumbnail">
@@ -285,14 +272,77 @@ function loadRecordings(selectedDate = '', currentPage = 1) {
                                 </div>
                                 <div class="overlay-buttons">
                                     <button class="btn btn-custom preview-btn" data-videosrc="${video.url}"><i class="fa fa-eye"></i></button>
+                                    <button class="btn btn-danger delete-btn" data-storage-path="${video.storage_path}" data-unique-id="${video.unique_id}"><i class="fa fa-trash"></i></button>
                                 </div>
                             </div>
                         `;
                     imagesContainer.append(videoHtml);
                 };
+
                 $('.preview-btn').on('click', function () {
                     var videoSrc = $(this).data('videosrc');
                     showVideoPreview(videoSrc);
+                });
+
+                $('.delete-btn').on('click', function () {
+
+                    var uniqueId = $(this).data('unique-id');
+                    var storagePath = $(this).data('storage-path');
+
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: 'You won\'t be able to revert this!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: 'var(--color-button)',
+                        cancelButtonColor: 'var(--color-menu-hover)',
+                        confirmButtonText: 'Yes, delete it!',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            content: 'swal-custom-content',
+                            cancelButton: 'swal-custom-cancel-button',
+                            confirmButton: 'swal-custom-confirm-button',
+                        },
+                        background: 'var(--color-modal)'
+
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: '/delete_video',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                success: function (response) {
+                                    Swal.fire({
+                                        title: 'Deleted!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        customClass: {
+                                            popup: 'swal-custom-popup',
+                                            title: 'swal-custom-title',
+                                            content: 'swal-custom-content'
+                                        },
+                                        confirmButtonColor: 'var(--color-button)'
+                                    });
+
+                                    if (response.status === 'success') {
+                                        loadRecordings(selectedDate); // Reload images after deletion
+                                    }
+                                },
+                                error: function (error) {
+                                    console.log(error);
+
+                                    Swal.fire(
+                                        'Error!',
+                                        'Failed to delete the video.',
+                                        'error'
+                                    );
+                                }
+                            });
+                        }
+                    });
+
                 });
             }
         },

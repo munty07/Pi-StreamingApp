@@ -11,39 +11,35 @@ window.onload = function () {
     var zoomOutButton = document.getElementById("zoomOutButton");
     var capturedCanvas;
 
-
+    // PAUSE
     pauseButton.addEventListener('click', function () {
-        const videoElement = document.querySelector("#videoContainer video");
+        const videoElement = document.querySelector("#videoContainer img");
         const icon = pauseButton.querySelector("i");
 
-        // Verifică dacă videoElement există și are dimensiuni
-        if (videoElement && videoElement.videoWidth > 0) {
+        if (videoElement && videoElement.width > 0) {
             if (!isPaused) {
                 const captureCanvas = document.createElement("canvas");
                 captureCanvas.id = "capturedCanvas";
-                captureCanvas.width = videoElement.videoWidth;
-                captureCanvas.height = videoElement.videoHeight;
+                captureCanvas.width = videoElement.width;
+                captureCanvas.height = videoElement.height;
                 const context = captureCanvas.getContext('2d');
                 context.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
 
-                captureCanvas.setAttribute("data-video-width", videoElement.videoWidth);
-                captureCanvas.setAttribute("data-video-height", videoElement.videoHeight);
+                captureCanvas.setAttribute("data-video-width", videoElement.width);
+                captureCanvas.setAttribute("data-video-height", videoElement.height);
 
-                videoElement.style.display = 'none'; // Ascunde video
-                videoElement.parentNode.insertBefore(captureCanvas, videoElement.nextSibling); // Afișează canvas-ul
-                videoElement.muted = true; // Oprește sunetul
+                videoElement.style.display = 'none';
+                videoElement.parentNode.insertBefore(captureCanvas, videoElement.nextSibling);
 
                 isPaused = true;
                 icon.className = "fas fa-play";
                 pauseButton.innerHTML = pauseButton.innerHTML.replace("Pause", "Play");
 
             } else {
-                // Logica pentru reluare: ascunde canvas-ul, afișează video-ul și pornește sunetul
                 const captureCanvas = videoElement.nextElementSibling;
                 if (captureCanvas) captureCanvas.remove();
 
-                videoElement.style.display = 'flex'; // Afișează video
-                videoElement.muted = false; // Porneste sunetul
+                videoElement.style.display = 'block';
 
                 isPaused = false;
                 icon.className = "fas fa-pause";
@@ -55,12 +51,13 @@ window.onload = function () {
         }
     });
 
+    // CAPTURE
     captureButton.onclick = function () {
         resetZoomMode();
         spinner.style.display = 'block';
 
         var container = document.querySelector("#videoContainer");
-        var videoElement = container.querySelector("video");
+        var videoElement = container.querySelector("img");
         capturedCanvas = document.getElementById('capturedCanvas');
         var canvas = document.createElement("canvas");
         var ctx = canvas.getContext("2d");
@@ -72,12 +69,10 @@ window.onload = function () {
             canvas.height = videoHeight;
             ctx.drawImage(capturedCanvas, 0, 0, videoWidth, videoHeight);
         } else {
-
             if (videoElement) {
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
-
+                canvas.width = videoElement.width;
+                canvas.height = videoElement.height;
+                ctx.drawImage(videoElement, 0, 0, videoElement.width, videoElement.height);
             } else {
                 console.error("No media element found for capture.");
                 return;
@@ -137,8 +132,8 @@ window.onload = function () {
         var xPos = (e.clientX - rect.left) / rect.width * 100;
         var yPos = (e.clientY - rect.top) / rect.height * 100;
 
-        var videoElement = document.querySelector("#videoContainer video");
-        videoElement.style.transformOrigin = `${xPos}% ${yPos}%`;
+        var imgElement = document.querySelector("#videoContainer img");
+        imgElement.style.transformOrigin = `${xPos}% ${yPos}%`;
 
         if (window.isZoomInMode && zoomLevel < maxZoomLevel) {
             zoomLevel *= zoomFactor;
@@ -154,8 +149,8 @@ window.onload = function () {
 
     // Actualizați funcția de zoom pentru a afecta și canvas-ul de captură
     function updateZoom() {
-        var video = document.querySelector("#videoContainer video");
-        video.style.transform = "scale(" + zoomLevel + ")";
+        var imgElement = document.querySelector("#videoContainer img");
+        imgElement.style.transform = "scale(" + zoomLevel + ")";
 
         var capturedCanvas = document.getElementById('capturedCanvas');
         if (capturedCanvas) {
@@ -196,122 +191,134 @@ window.onload = function () {
     });
 
 
-    // LIVE RECORDINGS
-    var recordingButton = document.getElementById("recordingButton");
-    var recording = false;
-    var recordedBlobs;
-    var mediaRecorder;
+    // // LIVE RECORDINGS
+    // var recordingButton = document.getElementById("recordingButton");
+    // var recording = false;
+    // var recordedBlobs;
+    // var mediaRecorder;
 
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(function (stream) {
-            window.stream = stream;
-            var videoElement = document.querySelector("#videoContainer img");
-            if (videoElement) {
-                videoElement.srcObject = stream;
-            } else {
-                var video = document.createElement("video");
-                video.srcObject = stream;
-                videoContainer.appendChild(video);
-                video.play();
-            }
-        })
-        .catch(function (err) {
-            console.error("Error accessing media devices.", err);
-        });
+    // navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    // .then(function (stream) {
+    //     window.stream = stream;
+    //     var videoElement = document.querySelector("#videoContainer img");
+    //     if (videoElement) {
+    //         videoElement.srcObject = stream;
+    //     } else {
+    //         var video = document.createElement("video");
+    //         video.srcObject = stream;
+    //         videoContainer.appendChild(video);
+    //         video.play();
+    //     }
+    // })
+    // .catch(function (err) {
+    //     console.error("Error accessing media devices.", err);
+    // });
 
-    recordingButton.onclick = function () {
-        if (window.stream) {
-            if (recording) {
-                stopRecording();
-                spinner.style.display = 'block';
-                recordingButton.textContent = 'Start Recording';
-                recording = false;
-            } else {
-                startRecording();
-                spinner.style.display = 'none';
-                recordingButton.textContent = 'Stop Recording';
-                recording = true;
-            }
-        } else {
-            console.error("Media stream not available.");
-        }
-    };
+    // // RECORDER
+    // recordingButton.onclick = function () {
+    //     if (window.stream) {
+    //         if (recording) {
+    //             stopRecording();
+    //             spinner.style.display = 'block';
+    //             recordingButton.textContent = 'Start Recording';
+    //             recording = false;
+    //         } else {
+    //             startRecording();
+    //             spinner.style.display = 'none';
+    //             recordingButton.textContent = 'Stop Recording';
+    //             recording = true;
+    //         }
+    //     } else {
+    //         console.error("Media stream not available.");
+    //     }
+    // };
 
-    function startRecording() {
-        recordedBlobs = [];
-        let options = { mimeType: 'video/webm;codecs=vp9' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            console.error(`${options.mimeType} is not supported`);
-            options = { mimeType: 'video/webm;codecs=vp8' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                console.error(`${options.mimeType} is not Supported`);
-                options = { mimeType: 'video/webm' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    console.error(`${options.mimeType} is not Supported`);
-                    options = { mimeType: '' };
-                }
-            }
-        }
+    // // START RECORDING
+    // function startRecording() {
+    //     recordedBlobs = [];
+    //     let options = { mimeType: 'video/webm;codecs=vp9' };
+    //     if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    //         console.error(`${options.mimeType} is not supported`);
+    //         options = { mimeType: 'video/webm;codecs=vp8' };
+    //         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    //             console.error(`${options.mimeType} is not Supported`);
+    //             options = { mimeType: 'video/webm' };
+    //             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    //                 console.error(`${options.mimeType} is not Supported`);
+    //                 options = { mimeType: '' };
+    //             }
+    //         }
+    //     }
 
-        try {
-            mediaRecorder = new MediaRecorder(window.stream, options);
-        } catch (e) {
-            console.error('Exception while creating MediaRecorder:', e);
-            return;
-        }
+    //     try {
+    //         mediaRecorder = new MediaRecorder(window.stream, options);
+    //     } catch (e) {
+    //         console.error('Exception while creating MediaRecorder:', e);
+    //         return;
+    //     }
 
-        mediaRecorder.onstop = (event) => {
-            console.log('Recorder stopped: ', event);
-            console.log('Recorded Blobs: ', recordedBlobs);
-            uploadVideo(new Blob(recordedBlobs, { type: 'video/webm' }));
-        };
-        mediaRecorder.ondataavailable = function (event) {
-            if (event.data && event.data.size > 0) {
-                recordedBlobs.push(event.data);
-            }
-        };
-        mediaRecorder.start(10);
-    }
+    //     mediaRecorder.onstop = (event) => {
+    //         console.log('Recorder stopped: ', event);
+    //         console.log('Recorded Blobs: ', recordedBlobs);
+    //         uploadVideo(new Blob(recordedBlobs, { type: 'video/webm' }));
+    //     };
+    //     mediaRecorder.ondataavailable = function (event) {
+    //         if (event.data && event.data.size > 0) {
+    //             recordedBlobs.push(event.data);
+    //         }
+    //     };
+    //     mediaRecorder.start(10);
+    // }
 
-    function stopRecording() {
-        mediaRecorder.stop();
-    }
+    // // STOP RECORDING
+    // function stopRecording() {
+    //     mediaRecorder.stop();
+    // }
 
-    function uploadVideo(blob) {
-        let formData = new FormData();
-        formData.append('video', blob, 'myRecording.webm');
+    // // UPLOAD VIDEO IN STORAGE
+    // function uploadVideo(blob) {
+    //     let formData = new FormData();
+    //     formData.append('video', blob, 'myRecording.webm');
 
-        fetch('/upload_video', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                spinner.style.display = 'none';
-                document.getElementById("successMessageRecording").innerText = data.message;
-                var successModal = document.getElementById("successModalRecording");
-                successModal.style.display = "block";
+    //     fetch('/upload_video', {
+    //         method: 'POST',
+    //         body: formData
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             spinner.style.display = 'none';
+    //             document.getElementById("successMessageRecording").innerText = data.message;
+    //             var successModal = document.getElementById("successModalRecording");
+    //             successModal.style.display = "block";
 
-                var closeSuccess = document.getElementsByClassName("close-success-recordings")[0];
-                closeSuccess.onclick = function () {
-                    successModal.style.display = "none";
-                };
+    //             var closeSuccess = document.getElementsByClassName("close-success-recordings")[0];
+    //             closeSuccess.onclick = function () {
+    //                 successModal.style.display = "none";
+    //             };
 
-                window.onclick = function (event) {
-                    if (event.target == successModal) {
-                        successModal.style.display = "none";
-                    }
-                };
-            })
-            .catch((error) => {
-                console.error('Error uploading video:', error);
-                spinner.style.display = 'none';
-            });
-    }
+    //             window.onclick = function (event) {
+    //                 if (event.target == successModal) {
+    //                     successModal.style.display = "none";
+    //                 }
+    //             };
+    //         })
+    //         .catch((error) => {
+    //             console.error('Error uploading video:', error);
+    //             spinner.style.display = 'none';
+    //         });
+    // }
 
-    document.getElementById('viewRecordingsBtn').addEventListener('click', function () {
-        localStorage.setItem('autoShowLiveRecordings', 'true');
-        window.location.href = storageUrl;
-    });
+    // // GO TO STORAGE PAGE
+    // document.getElementById('viewRecordingsBtn').addEventListener('click', function () {
+    //     localStorage.setItem('autoShowLiveRecordings', 'true');
+    //     window.location.href = storageUrl;
+    // });
+
+
+    // // GO TO STORAGE PAGE
+    // document.getElementById('viewRecordingsBtn').addEventListener('click', function () {
+    //     localStorage.setItem('autoShowLiveRecordings', 'true');
+    //     window.location.href = storageUrl;
+    // });
 
 };
