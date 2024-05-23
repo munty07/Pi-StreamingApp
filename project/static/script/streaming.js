@@ -1,3 +1,17 @@
+document.addEventListener('DOMContentLoaded', function () {
+    var videoContainer = document.getElementById('videoContainer');
+    videoContainer.classList.add('loading');
+    spinner.style.display = 'block';
+    var videoImage = document.querySelector('#videoContainer img');
+
+    videoImage.addEventListener('load', function () {
+        videoContainer.classList.remove('loading');
+        spinner.style.display = 'none';
+    });
+
+});
+
+
 window.onload = function () {
     let isPaused = false;
     var zoomLevel = 1;
@@ -307,13 +321,6 @@ window.onload = function () {
     //             spinner.style.display = 'none';
     //         });
     // }
-
-    // // GO TO STORAGE PAGE
-    // document.getElementById('viewRecordingsBtn').addEventListener('click', function () {
-    //     localStorage.setItem('autoShowLiveRecordings', 'true');
-    //     window.location.href = storageUrl;
-    // });
-
 
     // // GO TO STORAGE PAGE
     // document.getElementById('viewRecordingsBtn').addEventListener('click', function () {

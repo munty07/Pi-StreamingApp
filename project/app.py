@@ -9,19 +9,23 @@ from PIL import Image
 import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
-# from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip
 from flask_mail import Mail, Message
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-
+import requests
+import base64
+import shutil
+from flask_cors import CORS
 
 # Load environment variables from .env
 load_dotenv() 
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = os.getenv('SECRET_KEY')
 
 config ={
@@ -33,7 +37,7 @@ config ={
     "messagingSenderId": os.getenv('MESSAGING_SENDER_ID'),
     "appId": os.getenv('APP_ID')
 }
-
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['MAIL_SERVER']='live.smtp.mailtrap.io'
 app.config['MAIL_PORT']=587
 app.config['MAIL_USERNAME']='api'
@@ -50,6 +54,19 @@ auth = firebase.auth()
 db = firebase.database()
 storage = firebase.storage()
 
+
+
+import tempfile
+
+video_buffer = None  # Inițializăm buffer-ul video
+
+@app.route('/recording_status', methods=['GET'])
+def get_recording_status():
+    global video_buffer
+    if video_buffer:
+        return jsonify({"recording": True})
+    else:
+        return jsonify({"recording": False})
 #######################################################################
 ############################ REGISTER PAGE ############################ 
 #######################################################################
@@ -166,8 +183,27 @@ def streaming():
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+def save_temp_video(video_file_path):
+    try:
+        # Creează un director temporar
+        temp_dir = tempfile.mkdtemp()
+
+        # Obține numele fișierului din calea către fișierul video
+        video_file_name = os.path.basename(video_file_path)
+
+        # Construiește calea către fișierul temporar
+        temp_video_path = os.path.join(temp_dir, video_file_name)
+
+        # Copiază fișierul video în directorul temporar
+        shutil.copyfile(video_file_path, temp_video_path)
+
+        return temp_video_path
+    except Exception as e:
+        print("An error occurred while saving temp video:", e)
+        return None
+
 def generate_frames():
-    
+    global video_buffer
     try:
         camera = cv2.VideoCapture(0)
         out = None
@@ -189,8 +225,13 @@ def generate_frames():
                     if not recording:
                         print('START RECORDING')
                         out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'DIVX'), 20.0, (640, 480))
+                        #out = cv2.VideoWriter('output.webm', cv2.VideoWriter_fourcc(*'VP80'), 20.0, (640, 480))
+
                         recording = True
                         no_motion_timer = 0
+
+                        with app.app_context():
+                            capture_and_upload_image(frame)
                 else:
                     no_motion_timer += 1
                     if recording:
@@ -198,9 +239,16 @@ def generate_frames():
                             print('STOP RECORDING')
                             out.release()
                             recording = False
-                            toaddr = "poli.mastersiaps@gmail.com"
-                            send_email("output.avi", toaddr)
-                            # upload_video("output.avi")
+
+                            temp_video_path = save_temp_video('output.avi')
+                            # save_temp_video('output.avi')
+                            # temp_video_path = "D:\\Visual Studio Code\\python\\streamingApp\\project\\output.avi"
+
+                            if temp_video_path:
+                                with app.app_context():
+                                    upload_auto_video1(temp_video_path)
+                            else:
+                                print("Failed to save temp video.")
 
                 if recording:
                     out.write(frame)
@@ -213,64 +261,151 @@ def generate_frames():
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     except Exception as e:
-        print("An error occurred:", e)
+        print("An error occurred:", e)      
 
 
+# @app.route('/upload_auto_video', methods=['POST'])
+# def upload_auto_video(videoFile):
+#     print("TEST")
+#     try:
+#         # if 'user' not in session:
+#         #     return jsonify({"error": "User not authenticated"}), 403
 
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg', 'avi'}
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+#         # user_id = session['user_id']
+#         user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2'
 
+#         # Verificați dacă a fost furnizat un fișier video
+#         if videoFile is None:
+#             print('novideo')
+#             return jsonify({"error": "No video part"}), 400
 
+#         # Obțineți numele fișierului și asigurați-vă că este valid
+#         filename = secure_filename(videoFile.filename)
+#         if filename == '':
+#             print('noname')
+#             return jsonify({"error": "No selected video"}), 400
 
-@app.route('/upload_auto_video', methods=['POST'])
-def upload_auto_video():
+#         print("Filename: ", filename)
+
+#         if not allowed_file(filename):
+#             print('invalid')
+#             return jsonify({"error": "Invalid file type"}), 400
+
+#         # Salvați fișierul temporar
+#         temp_path = f"temp_auto_{filename}.mp4"
+#         videoFile.save(temp_path)
+#         print("Temp: ", temp_path)
+#         # Încărcați fișierul în storage
+#         storage_path = f"AutoLiveRecordings/{user_id}/{filename}"
+#         storage.child(storage_path).put(temp_path)
+#         file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
+
+#         date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+#         unique_id = str(uuid.uuid4())
+
+#         db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).child(unique_id).set({
+#             "details": {
+#                 "timestamp": date_time,
+#                 "size":  f"{file_size_in_mb:.2f} MB",
+#                 "filename": filename,
+#                 "storage_path": storage_path
+#             }
+#         })
+
+#         # Ștergeți fișierul temporar
+#         os.remove(temp_path)
+
+#         print('success')
+#         return jsonify({"message": "The recording has been successfully saved!"})
+
+#     except Exception as e:
+#         return jsonify({'status': 'error', 'message': 'Failed to upload video: {}'.format(str(e))}), 500
+
+@app.route('/upload_auto_video1', methods=['POST'])
+def upload_auto_video1(video_path):
+    print('UPLOAD...')
     try:
-        if 'user' not in session:
-            return jsonify({"error": "User not authenticated"}), 403
+        with app.app_context():
+            print("VIDEO PATH: ", video_path)
+            user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2' 
+            #user_id = session['user_id']
+       
+            #storage_path = f"AutoLiveRecordings/{user_id}"
+            storage_path = f"LiveRecordings/{user_id}"
+            print('STORAGE: ',storage_path)
+            #filename = f"{user_id}_{str(uuid.uuid4())}.avi"
 
-        user_id = session['user_id']
+            unique_id = str(uuid.uuid4())
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
+            print('Filename: ', filename)
+            #STORAGE 
+            try:
+                storage.child(storage_path).child(filename).put(video_path)
+                # storage.child(storage_path).child(filename).put(temp_video_file_path)
+                print("Fisierul a fost incarcat cu succes in Firebase Storage.")
+            except Exception as e:
+                print("Error Firebase Storage:", e)
 
-        if 'video' not in request.files:
-            print('novideo')
-            return jsonify({"error": "No video part"}), 400
 
-        video_file = request.files['video']
-        if video_file.filename == '':
-            print('noname')
-            return jsonify({"error": "No selected video"}), 400
+            #Database
+            date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+            file_size_in_mb = os.path.getsize(video_path) / (1024 * 1024)
+            # db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).push({
+            db.child("UserCaptures").child("LiveRecordings").child(user_id).push({
+                "details": {
+                    "timestamp": date_time,
+                    "size":  f"{file_size_in_mb:.2f} MB",
+                    "filename": filename,
+                    "storage_path": storage_path + filename
+                }
+            })
 
-        if not allowed_file(video_file.filename):
-            print('invalid')
-            return jsonify({"error": "Invalid file type"}), 400
+            # Ștergem fișierul temporar
+            # os.remove(temp_video_file_path)
 
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+            print('The recording has been successfully saved!')
+    except Exception as e:
+        print('Failed to upload video:', str(e))
+
+def capture_and_upload_image(frame):
+    try:
+        # Convert the frame to a PIL image
+        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        
+        # Generate a unique filename
+        user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2' 
         unique_id = str(uuid.uuid4())
-        filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
+        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+        unique_filename = f"{user_id}_{timestamp}.png"
+        temp_path = f"temp_{unique_filename}"
+        
+        # Save the image to a temporary file
+        image.save(temp_path)
 
-        temp_path = f"temp_auto_{filename}.mp4"
-        video_file.save(temp_path)
-
-        storage_path = f"AutoLiveRecordings/{user_id}/{filename}"
+        # Upload the image to storage
+        storage_path = f"AutoLiveCaptures/{user_id}/{unique_filename}"
         storage.child(storage_path).put(temp_path)
         file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
 
-        db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).child(unique_id).set({
+        # Update the database with image details
+        db.child("UserCaptures").child("AutoLiveCaptures").child(user_id).child(unique_id).set({
             "details": {
                 "timestamp": date_time,
                 "size":  f"{file_size_in_mb:.2f} MB",
-                "filename": filename,
+                "filename": unique_filename,
                 "storage_path": storage_path
             }
         })
-        print('success')
+
+        # Remove the temporary file
         os.remove(temp_path)
 
-        return jsonify({"message": "The recording has been successfully saved!"})
+        print("Image captured and uploaded successfully!")
+
     except Exception as e:
-        return jsonify({'status': 'error', 'message': 'Failed to upload video: {}'.format(str(e))}), 500
+        print("An error occurred while capturing and uploading the image:", e)
 
 #######################################################################
 ############################ STORAGE PAGE ############################# 
@@ -338,10 +473,10 @@ def send_email(video_path, toaddr):
     return 'Message sent!'
 
 
-# def allowed_file(filename):
-#     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
-#     return '.' in filename and \
-#            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/upload_video', methods=['POST'])
@@ -665,4 +800,5 @@ def logout():
  
  
 if __name__ == "__main__":
-    app.run(debug=True)
+    with app.app_context():
+        app.run(debug=True)

@@ -139,7 +139,6 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
 
                 $('.clickable').on('click', function () {
                     var imageSrc = $(this).data('imgsrc');
-                    console.log("Img: " + imageSrc);
                     showPreview(imageSrc);
                 });
 
@@ -217,7 +216,141 @@ function showPreview(imageSrc) {
     $('#preview-overlay').show();
 }
 
-// VIDEO
+//===============================================================================================//
+//==================================AUTO LIVE CAPTURES===========================================//
+//===============================================================================================//
+
+function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
+    $.ajax({
+        url: '/get_autoimages',
+        data: { date: selectedDate, page: currentPage },
+        type: 'GET',
+        success: function (response) {
+            var imagesContainer = $('#autoimagesContainer');
+            var messageContainer = $('#message');
+            var paginationContainer = $('#pagination');
+            var itemsPerPage = 6;
+            // var currentPage = 1;
+            var totalPages = Math.ceil(response.length / itemsPerPage);
+            renderPagination(totalPages, currentPage);
+
+            imagesContainer.empty();
+            messageContainer.empty();
+
+            if (response.length === 0) {
+                paginationContainer.css("display", "none");
+                messageContainer.css("display", "flex");
+                messageContainer.append('<div class="text-center no-data"><i class="fas fa-images" aria-hidden="true"></i><p>No photos available.</p></div>');
+            } else {
+                paginationContainer.css("display", "block");
+                messageContainer.css("display", "none");
+                response.sort(function (a, b) {//order by date desc
+                    var dateA = new Date(a.timestamp), dateB = new Date(b.timestamp);
+                    return dateB - dateA;
+                });
+                var startIndex = (currentPage - 1) * itemsPerPage;
+                var endIndex = Math.min(startIndex + itemsPerPage, response.length);
+
+                for (var i = startIndex; i < endIndex; i++) {
+                    var image = response[i];
+                    var imgHtml = `
+                        <div class="col-md-4 image-card">
+                            <img src="${image.url}" class="img-fluid img-thumbnail clickable" data-imgsrc="${image.url}">
+                            <div class="image-info">
+                                <p>Size: ${image.size}</p>
+                                <p>${image.timestamp}</p>
+                            </div>
+                            <div class="overlay-buttons">
+                                <button class="btn btn-custom preview-btn clickable" data-imgsrc="${image.url}"><i class="fa fa-eye"></i></button>
+                                <button class="btn btn-danger delete-btn" data-storage-path="${image.storage_path}" data-unique-id="${image.unique_id}"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                    imagesContainer.append(imgHtml);
+                }
+
+                $('.clickable').on('click', function () {
+                    var imageSrc = $(this).data('imgsrc');
+                    showPreview(imageSrc);
+                });
+
+                $('.delete-btn').on('click', function () {
+
+                    var uniqueId = $(this).data('unique-id');
+                    var storagePath = $(this).data('storage-path');
+
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: 'You won\'t be able to revert this!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: 'var(--color-button)',
+                        cancelButtonColor: 'var(--color-menu-hover)',
+                        confirmButtonText: 'Yes, delete it!',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            content: 'swal-custom-content',
+                            cancelButton: 'swal-custom-cancel-button',
+                            confirmButton: 'swal-custom-confirm-button',
+                        },
+                        background: 'var(--color-modal)'
+
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: '/delete_autoimage',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                success: function (response) {
+                                    Swal.fire({
+                                        title: 'Deleted!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        customClass: {
+                                            popup: 'swal-custom-popup',
+                                            title: 'swal-custom-title',
+                                            content: 'swal-custom-content'
+                                        },
+                                        confirmButtonColor: 'var(--color-button)'
+                                    });
+
+                                    if (response.status === 'success') {
+                                        loadCaptures(selectedDate); // Reload images after deletion
+                                    }
+                                },
+                                error: function (error) {
+                                    console.log(error);
+
+                                    Swal.fire(
+                                        'Error!',
+                                        'Failed to delete the image. ',
+                                        'error'
+                                    );
+                                }
+                            });
+                        }
+                    });
+
+                });
+            }
+        },
+        error: function () {
+            alert('Error loading images.');
+        }
+    });
+}
+
+
+
+
+
+
+//===============================================================================================//
+//==================================== LIVE RECORDINGS===========================================//
+//===============================================================================================//
+
 $('#liveRecordingsBtn').click(function () {
     currentState = 'recordings';
     $('#dateFilter').val("");
