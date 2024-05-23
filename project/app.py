@@ -20,6 +20,7 @@ import requests
 import base64
 import shutil
 from flask_cors import CORS
+import time
 
 # Load environment variables from .env
 load_dotenv() 
@@ -224,14 +225,14 @@ def generate_frames():
                 if len(faces) > 0:
                     if not recording:
                         print('START RECORDING')
-                        out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'DIVX'), 20.0, (640, 480))
-                        #out = cv2.VideoWriter('output.webm', cv2.VideoWriter_fourcc(*'VP80'), 20.0, (640, 480))
+                        out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, (640, 480))
 
                         recording = True
                         no_motion_timer = 0
 
                         with app.app_context():
                             capture_and_upload_image(frame)
+                      
                 else:
                     no_motion_timer += 1
                     if recording:
@@ -241,12 +242,14 @@ def generate_frames():
                             recording = False
 
                             temp_video_path = save_temp_video('output.avi')
-                            # save_temp_video('output.avi')
-                            # temp_video_path = "D:\\Visual Studio Code\\python\\streamingApp\\project\\output.avi"
 
                             if temp_video_path:
-                                with app.app_context():
-                                    upload_auto_video1(temp_video_path)
+                                mp4_video_path = convert_and_resize_video(temp_video_path)
+                                if mp4_video_path:
+                                    with app.app_context():
+                                        upload_auto_video(mp4_video_path)
+                                else:
+                                    print("Failed to convert video to MP4.")
                             else:
                                 print("Failed to save temp video.")
 
@@ -264,116 +267,117 @@ def generate_frames():
         print("An error occurred:", e)      
 
 
-# @app.route('/upload_auto_video', methods=['POST'])
-# def upload_auto_video(videoFile):
-#     print("TEST")
-#     try:
-#         # if 'user' not in session:
-#         #     return jsonify({"error": "User not authenticated"}), 403
+def convert_and_resize_video(input_path):
+    output_path = input_path.replace('.avi', '.mp4')
+    try:
+        clip = VideoFileClip(input_path)
+        clip_resized = clip.resize(width=640)  
+        clip_resized.write_videofile(output_path, codec='libx264', audio_codec='aac')
+        return output_path
+    except Exception as e:
+        print(f"Error converting video: {e}")
+        return None
 
-#         # user_id = session['user_id']
-#         user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2'
 
-#         # Verificați dacă a fost furnizat un fișier video
-#         if videoFile is None:
-#             print('novideo')
-#             return jsonify({"error": "No video part"}), 400
-
-#         # Obțineți numele fișierului și asigurați-vă că este valid
-#         filename = secure_filename(videoFile.filename)
-#         if filename == '':
-#             print('noname')
-#             return jsonify({"error": "No selected video"}), 400
-
-#         print("Filename: ", filename)
-
-#         if not allowed_file(filename):
-#             print('invalid')
-#             return jsonify({"error": "Invalid file type"}), 400
-
-#         # Salvați fișierul temporar
-#         temp_path = f"temp_auto_{filename}.mp4"
-#         videoFile.save(temp_path)
-#         print("Temp: ", temp_path)
-#         # Încărcați fișierul în storage
-#         storage_path = f"AutoLiveRecordings/{user_id}/{filename}"
-#         storage.child(storage_path).put(temp_path)
-#         file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
-
-#         date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
-#         unique_id = str(uuid.uuid4())
-
-#         db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).child(unique_id).set({
-#             "details": {
-#                 "timestamp": date_time,
-#                 "size":  f"{file_size_in_mb:.2f} MB",
-#                 "filename": filename,
-#                 "storage_path": storage_path
-#             }
-#         })
-
-#         # Ștergeți fișierul temporar
-#         os.remove(temp_path)
-
-#         print('success')
-#         return jsonify({"message": "The recording has been successfully saved!"})
-
-#     except Exception as e:
-#         return jsonify({'status': 'error', 'message': 'Failed to upload video: {}'.format(str(e))}), 500
-
-@app.route('/upload_auto_video1', methods=['POST'])
-def upload_auto_video1(video_path):
+@app.route('/upload_auto_video', methods=['POST'])
+def upload_auto_video(video_path):
     print('UPLOAD...')
     try:
-        with app.app_context():
-            print("VIDEO PATH: ", video_path)
-            user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2' 
-            #user_id = session['user_id']
-       
-            #storage_path = f"AutoLiveRecordings/{user_id}"
-            storage_path = f"LiveRecordings/{user_id}"
-            print('STORAGE: ',storage_path)
-            #filename = f"{user_id}_{str(uuid.uuid4())}.avi"
+        user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2'
+        storage_path = f"AutoLiveRecordings/{user_id}"
+        unique_id = str(uuid.uuid4())
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.mp4")
 
-            unique_id = str(uuid.uuid4())
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.webm")
-            print('Filename: ', filename)
-            #STORAGE 
-            try:
-                storage.child(storage_path).child(filename).put(video_path)
-                # storage.child(storage_path).child(filename).put(temp_video_file_path)
-                print("Fisierul a fost incarcat cu succes in Firebase Storage.")
-            except Exception as e:
-                print("Error Firebase Storage:", e)
+        try:
+            storage.child(storage_path).child(filename).put(video_path, content_type='video/mp4')
+            print("Fisierul a fost incarcat cu succes in Firebase Storage.")
+        except Exception as e:
+            print("Error Firebase Storage:", e)
+            return jsonify({"error": "Failed to upload to Firebase Storage"}), 500
 
-
-            #Database
+        try:
             date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
             file_size_in_mb = os.path.getsize(video_path) / (1024 * 1024)
-            # db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).push({
+            db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).push({
+                "details": {
+                    "timestamp": date_time,
+                    "size":  f"{file_size_in_mb:.2f} MB",
+                    "filename": filename,
+                    "storage_path": f"{storage_path}/{filename}"
+                }
+            })
+            print('The recording has been successfully saved in the database!')
+        except Exception as e:
+            print("Error Firebase Database:", e)
+            return jsonify({"error": "Failed to save to Firebase Database"}), 500
+
+        try:
+            os.remove(video_path)
+        except Exception as e:
+            print("Error deleting temporary video file:", e)
+
+        return jsonify({"message": "The recording has been successfully saved!"})
+    except Exception as e:
+        print('Failed to upload video:', str(e))
+        return jsonify({"error": "Failed to process the upload"}), 500
+
+
+@app.route('/upload_manual_video', methods=['POST'])
+def upload_manual_video():
+    try:
+        video_file = request.files['video']
+        if not video_file:
+            return jsonify({"error": "No video part"}), 400
+
+        user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2'
+        storage_path = f"LiveRecordings/{user_id}"
+        unique_id = str(uuid.uuid4())
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.mp4")
+
+        temp_path = f"temp_{filename}"
+        video_file.save(temp_path)
+
+        try:
+            storage.child(storage_path).child(filename).put(temp_path, content_type='video/mp4')
+            print("Fisierul a fost incarcat cu succes in Firebase Storage.")
+        except Exception as e:
+            print("Error Firebase Storage:", e)
+            return jsonify({"error": "Failed to upload to Firebase Storage"}), 500
+
+        try:
+            date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
+            file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
             db.child("UserCaptures").child("LiveRecordings").child(user_id).push({
                 "details": {
                     "timestamp": date_time,
                     "size":  f"{file_size_in_mb:.2f} MB",
                     "filename": filename,
-                    "storage_path": storage_path + filename
+                    "storage_path": f"{storage_path}/{filename}"
                 }
             })
+            print('The recording has been successfully saved in the database!')
+        except Exception as e:
+            print("Error Firebase Database:", e)
+            return jsonify({"error": "Failed to save to Firebase Database"}), 500
 
-            # Ștergem fișierul temporar
-            # os.remove(temp_video_file_path)
+        try:
+            os.remove(temp_path)
+        except Exception as e:
+            print("Error deleting temporary video file:", e)
 
-            print('The recording has been successfully saved!')
+        return jsonify({"message": "The recording has been successfully saved!"})
     except Exception as e:
         print('Failed to upload video:', str(e))
+        return jsonify({"error": "Failed to process the upload"}), 500
+
 
 def capture_and_upload_image(frame):
     try:
-        # Convert the frame to a PIL image
+        time.sleep(3)
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         
-        # Generate a unique filename
         user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2' 
         unique_id = str(uuid.uuid4())
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -381,15 +385,12 @@ def capture_and_upload_image(frame):
         unique_filename = f"{user_id}_{timestamp}.png"
         temp_path = f"temp_{unique_filename}"
         
-        # Save the image to a temporary file
         image.save(temp_path)
 
-        # Upload the image to storage
         storage_path = f"AutoLiveCaptures/{user_id}/{unique_filename}"
         storage.child(storage_path).put(temp_path)
         file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
 
-        # Update the database with image details
         db.child("UserCaptures").child("AutoLiveCaptures").child(user_id).child(unique_id).set({
             "details": {
                 "timestamp": date_time,
@@ -399,7 +400,6 @@ def capture_and_upload_image(frame):
             }
         })
 
-        # Remove the temporary file
         os.remove(temp_path)
 
         print("Image captured and uploaded successfully!")
@@ -578,6 +578,51 @@ def get_images():
 
     return jsonify(images)
 
+
+@app.route('/get_autoimages')
+def get_autoimages():
+    if 'user' not in session:
+        return jsonify([])  
+
+    user_id = session['user_id']
+    selected_date = request.args.get('date', '')
+    images_details = db.child("UserCaptures").child("AutoLiveCaptures").child(user_id).get()
+
+    images = [] 
+    if images_details.val():
+        for image in images_details.each():
+            image_data = image.val()['details']
+            storage_path = image_data['storage_path']
+            size = image_data.get('size', 'N/A')  
+            timestamp = image_data.get('timestamp', 'N/A') 
+            try:
+                image_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+            except ValueError:
+                continue 
+
+            url = storage.child(storage_path).get_url(None)
+            unique_id = image.key()
+
+            if selected_date:
+                if image_date == selected_date:
+                    images.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp,
+                        'unique_id': unique_id,
+                        'storage_path': storage_path
+                    })
+            else:
+                images.append({
+                    'url': url,
+                    'size': size,
+                    'timestamp': timestamp,
+                    'unique_id': unique_id,
+                    'storage_path': storage_path
+                })
+
+    return jsonify(images)
+
 @app.route('/get_videos')
 def get_videos():
     if 'user' not in session:
@@ -622,6 +667,54 @@ def get_videos():
 
     return jsonify(videos)
 
+
+
+@app.route('/get_autovideos')
+def get_autovideos():
+    if 'user' not in session:
+        return jsonify([])  
+
+    user_id = session['user_id']
+    selected_date = request.args.get('date', '')
+    video_details = db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).get()
+
+    videos = [] 
+    if video_details.val():
+        for video in video_details.each():
+            video_data = video.val()['details']
+            storage_path = video_data['storage_path']
+            size = video_data.get('size', 'N/A')  
+            timestamp = video_data.get('timestamp', 'N/A')  
+            try:
+                video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+            except ValueError:
+                continue 
+
+            url = storage.child(storage_path).get_url(None)
+            unique_id = video.key()
+
+            if selected_date:
+                if video_date == selected_date:
+                    videos.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp,
+                        'unique_id': unique_id,
+                        'storage_path': storage_path
+                    })
+            else:
+                videos.append({
+                    'url': url,
+                    'size': size,
+                    'timestamp': timestamp,
+                    'unique_id': unique_id,
+                    'storage_path': storage_path
+                })
+
+    return jsonify(videos)
+
+
+
 # delete image
 @app.route('/delete_image', methods=['POST'])
 def delete_image():
@@ -640,6 +733,26 @@ def delete_image():
         return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
+    
+    
+@app.route('/delete_autoimage', methods=['POST'])
+def delete_autoimage():
+    if 'user' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 403
+
+    data = request.get_json()
+    user_id = session['user_id']
+    unique_id = data.get('unique_id')
+    #storage_path = data.get('storage_path')
+
+    try:
+        #storage.child(storage_path).delete(storage_path)
+        db.child("UserCaptures").child("AutoLiveCaptures").child(user_id).child(unique_id).remove()
+
+        return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
+
 
 # delete video
 @app.route('/delete_video', methods=['POST'])
@@ -655,6 +768,26 @@ def delete_video():
     try:
         #storage.child(storage_path).delete(storage_path)
         db.child("UserCaptures").child("LiveRecordings").child(user_id).child(unique_id).remove()
+
+        return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to delete video: {}'.format(str(e))}), 500
+    
+
+# delete auto live recordings
+@app.route('/delete_autovideo', methods=['POST'])
+def delete_autovideo():
+    if 'user' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 403
+
+    data = request.get_json()
+    user_id = session['user_id']
+    unique_id = data.get('unique_id')
+    #storage_path = data.get('storage_path')
+
+    try:
+        #storage.child(storage_path).delete(storage_path)
+        db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).child(unique_id).remove()
 
         return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
     except Exception as e:
