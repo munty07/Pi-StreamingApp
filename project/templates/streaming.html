@@ -17,7 +17,8 @@
         <h2>Live Streaming</h2>
         <br>
         <div id="videoContainer">
-            <img src="{{ url_for('video_feed') }}" alt="Video Feed">
+            <img src="{{ url_for('video_feed') }}" alt="Video Feed" id="videoFeed">
+            <canvas id="videoCanvas" style="display: none;"></canvas>
         </div>
         <div id="spinner">
             <img src="../static/img/load.gif" alt="Loading..."> 

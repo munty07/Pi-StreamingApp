@@ -1,47 +1,63 @@
+var btnCaptures = $('#liveCapturesBtn');
+var btnAutoLiveCaptures = $('#autoLiveCapturesBtn');
+var btnRecordings = $('#liveRecordingsBtn');
+var btnAutoLiveRecordings = $('#autoLiveRecordingsBtn');
+
 $(document).ready(function () {
     var currentPage = 1;
 
     $('#dateFilter').val("");
-    loadCaptures();
-
-    // live captures
-    if (localStorage.getItem('autoShowLiveCaptures') === 'true') {
-        localStorage.setItem('autoShowLiveRecordings', 'false');
-        localStorage.setItem('autoShowAutoLiveCaptures', 'false');
-        localStorage.setItem('autoShowAutoLiveRecordings', 'false');
-        currentState = 'captures';
-        $('#dateFilter').val("");
+    if (localStorage.getItem('autoShowLiveRecordings') === 'false') {
         loadCaptures();
+        btnCaptures.addClass('active-submenu');
+        btnRecordings.removeClass('active-submenu');
+        btnAutoLiveCaptures.removeClass('active-submenu');
+        btnAutoLiveRecordings.removeClass('active-submenu');
+    } else {
+        btnRecordings.addClass('active-submenu');
+        btnAutoLiveCaptures.removeClass('active-submenu');
+        btnAutoLiveRecordings.removeClass('active-submenu');
+        btnCaptures.removeClass('active-submenu');
     }
 
-    // auto live captures
-    if (localStorage.getItem('autoShowAutoLiveCaptures') === 'true') {
+    function resetLocalStorage() {
         localStorage.setItem('autoShowLiveCaptures', 'false');
         localStorage.setItem('autoShowLiveRecordings', 'false');
-        localStorage.setItem('autoShowAutoLiveRecordings', 'false');
-        currentState = 'autoCaptures';
-        $('#dateFilter').val("");
-        loadAutoLiveCaptures();
-    }
-
-    // live recordings
-    if (localStorage.getItem('autoShowLiveRecordings') === 'true') {
-        localStorage.setItem('autoShowLiveCaptures', 'false');
         localStorage.setItem('autoShowAutoLiveCaptures', 'false');
         localStorage.setItem('autoShowAutoLiveRecordings', 'false');
-        currentState = 'recordings';
-        $('#dateFilter').val("");
-        loadRecordings();
     }
 
-    // auto live recordings
-    if (localStorage.getItem('autoShowAutoLiveRecordings') === 'true') {
-        localStorage.setItem('autoShowLiveRecordings', 'false');
-        localStorage.setItem('autoShowLiveCaptures', 'false');
-        localStorage.setItem('autoShowAutoLiveCaptures', 'false');
-        currentState = 'autoRecordings';
+    function handleStateChange(state) {
         $('#dateFilter').val("");
-        loadAutoLiveRecordings();
+        switch (state) {
+            case 'captures':
+                currentState = 'captures';
+                loadCaptures();
+                break;
+            case 'autoCaptures':
+                currentState = 'autoCaptures';
+                loadAutoLiveCaptures();
+                break;
+            case 'recordings':
+                currentState = 'recordings';
+                loadRecordings();
+                break;
+            case 'autoRecordings':
+                currentState = 'autoRecordings';
+                loadAutoLiveRecordings();
+                break;
+        }
+        resetLocalStorage();
+    }
+
+    if (localStorage.getItem('autoShowLiveCaptures') === 'true') {
+        handleStateChange('captures');
+    } else if (localStorage.getItem('autoShowAutoLiveCaptures') === 'true') {
+        handleStateChange('autoCaptures');
+    } else if (localStorage.getItem('autoShowLiveRecordings') === 'true') {
+        handleStateChange('recordings');
+    } else if (localStorage.getItem('autoShowAutoLiveRecordings') === 'true') {
+        handleStateChange('autoRecordings');
     }
 
     // Event listeners for pagination buttons
@@ -128,6 +144,10 @@ $('#liveCapturesBtn').click(function () {
     currentState = 'captures';
     $('#dateFilter').val("");
     loadCaptures();
+    btnCaptures.addClass('active-submenu');
+    btnRecordings.removeClass('active-submenu');
+    btnAutoLiveCaptures.removeClass('active-submenu');
+    btnAutoLiveRecordings.removeClass('active-submenu');
 });
 
 function loadCaptures(selectedDate = '', currentPage = 1) {
@@ -266,6 +286,10 @@ $('#autoLiveCapturesBtn').click(function () {
     currentState = 'autoCaptures';
     $('#dateFilter').val("");
     loadAutoLiveCaptures();
+    btnAutoLiveCaptures.addClass('active-submenu');
+    btnRecordings.removeClass('active-submenu');
+    btnAutoLiveRecordings.removeClass('active-submenu');
+    btnCaptures.removeClass('active-submenu');
 });
 
 function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
@@ -399,6 +423,10 @@ $('#liveRecordingsBtn').click(function () {
     currentState = 'recordings';
     $('#dateFilter').val("");
     loadRecordings();
+    btnRecordings.addClass('active-submenu');
+    btnAutoLiveCaptures.removeClass('active-submenu');
+    btnAutoLiveRecordings.removeClass('active-submenu');
+    btnCaptures.removeClass('active-submenu');
 });
 
 function loadRecordings(selectedDate = '', currentPage = 1) {
@@ -557,6 +585,10 @@ $('#autoLiveRecordingsBtn').click(function () {
     currentState = 'autoRecordings';
     $('#dateFilter').val("");
     loadAutoLiveRecordings();
+    btnAutoLiveRecordings.addClass('active-submenu');
+    btnAutoLiveCaptures.removeClass('active-submenu');
+    btnRecordings.removeClass('active-submenu');
+    btnCaptures.removeClass('active-submenu');
 });
 
 function loadAutoLiveRecordings(selectedDate = '', currentPage = 1) {

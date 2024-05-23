@@ -24,6 +24,13 @@ window.onload = function () {
     var zoomInButton = document.getElementById("zoomInButton");
     var zoomOutButton = document.getElementById("zoomOutButton");
     var capturedCanvas;
+    var recordingButton = document.getElementById("recordingButton");
+    var isRecording = false;
+    var mediaRecorder;
+    var recordedBlobs;
+    var canvas = document.getElementById("videoCanvas");
+    var ctx = canvas.getContext("2d");
+    var videoFeed = document.getElementById("videoFeed");
 
     // PAUSE
     pauseButton.addEventListener('click', function () {
@@ -126,6 +133,95 @@ window.onload = function () {
             });
     };
 
+    // RECORDING
+    recordingButton.onclick = function () {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    };
+
+    function startRecording() {
+        recordedBlobs = [];
+        var options = { mimeType: 'video/webm;codecs=vp9' };
+
+        try {
+            var stream = canvas.captureStream(30); // 30 FPS
+            mediaRecorder = new MediaRecorder(stream, options);
+        } catch (e) {
+            console.error('Exception while creating MediaRecorder:', e);
+            return;
+        }
+
+        recordingButton.textContent = 'Stop Recording';
+        mediaRecorder.onstop = (event) => {
+            console.log('Recorder stopped:', event);
+            console.log('Recorded Blobs:', recordedBlobs);
+
+            var blob = new Blob(recordedBlobs, { type: 'video/webm' });
+            var formData = new FormData();
+            formData.append('video', blob, 'manual_recording.webm');
+
+            fetch('/upload_manual_video', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Video successfully uploaded:', data.message);
+                    spinner.style.display = 'none';
+                    document.getElementById("successMessageRecording").innerText = data.message;
+                    var successModal = document.getElementById("successModalRecording");
+                    successModal.style.display = "block";
+
+                    var closeSuccess = document.getElementsByClassName("close-success-recordings")[0];
+                    closeSuccess.onclick = function () {
+                        successModal.style.display = "none";
+                    };
+
+                    window.onclick = function (event) {
+                        if (event.target == successModal) {
+                            successModal.style.display = "none";
+                        }
+                    };
+                })
+                .catch((error) => {
+                    console.error('Error uploading video:', error);
+                });
+        };
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordedBlobs.push(event.data);
+            }
+        };
+
+        mediaRecorder.start(10); // Collect 10ms of data
+        console.log('MediaRecorder started', mediaRecorder);
+        isRecording = true;
+
+        // Start drawing frames from the video feed to the canvas
+        drawFrame();
+    }
+
+    function stopRecording() {
+        mediaRecorder.stop();
+        recordingButton.textContent = 'Start Recording';
+        isRecording = false;
+        spinner.style.display = 'block';
+    }
+
+    function drawFrame() {
+        if (!isRecording) return;
+
+        canvas.width = videoFeed.width;
+        canvas.height = videoFeed.height;
+        ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
+
+        requestAnimationFrame(drawFrame);
+    }
+
     // Zoom in
     zoomInButton.addEventListener('click', function () {
         resetZoomMode();
@@ -204,6 +300,11 @@ window.onload = function () {
         window.location.href = storageUrl;
     });
 
+
+    document.getElementById('viewRecordingsBtn').addEventListener('click', function () {
+        localStorage.setItem('autoShowLiveRecordings', 'true');
+        window.location.href = storageUrl;
+    });
 
     // // LIVE RECORDINGS
     // var recordingButton = document.getElementById("recordingButton");

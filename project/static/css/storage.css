@@ -40,7 +40,7 @@ body {
 }
 
 .btn-custom { 
-    background-color: var(--color-button);
+    background-color: var(--color-modal);
     border-color: var(--color-border);
     color: var(--color-text);
 }
@@ -178,6 +178,10 @@ body {
 
 .active{
     color: var(--color-button);
+}
+
+.active-submenu{
+    background-color: var(--color-button);
 }
 
 .disabled{
