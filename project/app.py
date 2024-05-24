@@ -294,7 +294,7 @@ def upload_auto_video(video_path):
             print("Fisierul a fost incarcat cu succes in Firebase Storage.")
         except Exception as e:
             print("Error Firebase Storage:", e)
-            return jsonify({"error": "Failed to upload to Firebase Storage"}), 500
+            return jsonify({"error": "Failed to upload file to Firebase Storage"}), 500
 
         try:
             date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
@@ -312,6 +312,12 @@ def upload_auto_video(video_path):
             print("Error Firebase Database:", e)
             return jsonify({"error": "Failed to save to Firebase Database"}), 500
 
+        try:
+            send_email(video_path, 'poli.mastersiaps@gmail.com')
+        except Exception as e:
+            print("Error sending email:", e)
+            return jsonify({"error": "Email sending failed..."}), 500
+        
         try:
             os.remove(video_path)
         except Exception as e:
@@ -451,7 +457,7 @@ def send_email(video_path, toaddr):
 
     msg['From'] = fromaddr
     msg['To'] = toaddr
-    msg['Subject'] = "TEST MSG - Person detected"
+    msg['Subject'] = "SnapStream - Person detected"
 
     body = "A person has been detected. Video footage is attached."
     msg.attach(MIMEText(body, 'plain'))
