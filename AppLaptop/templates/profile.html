@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+{% from "menu.html" import render_menu %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="shortcut icon" href="../static/img/logo.png" type="x-icon" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="../static/css/profile.css"> 
+    <link rel="stylesheet" href="../static/css/menu.css">
+</head>
+<body>
+    {{ render_menu('profile', username) }}
+
+    <div class="container">
+        <div class="profile-info">
+            <div class="user-avatar">
+                <img src="/profile_picture" alt="User Avatar" class="user-img">
+                <div class="overlay-buttons">
+                    <input class="btn-overlay" type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <label for="imageUpload" class="btn-overlay" title="Upload a photo from your device"><i class="fas fa-upload"></i></label>
+                    <button class="btn-overlay" id="btnPhoto" title="Take a photo"><i class="fas fa-camera"></i></button> 
+                    <button class="btn-overlay" id="btnPreview" title="Show profile picture"><i class="fas fa-eye"></i></button> 
+                </div>
+            </div>
+
+            <h2 id="emailAddress">{{ user.email }}</h2>
+            <br>
+            <div class="user-details">
+                <div class="info-item">
+                    <div class="col">
+                        <label for="profile-username">User:</label>
+                    </div>
+                    <div class="col">
+                        <span id="profile-username" class="editable">{{ user.username }}</span>
+                        <span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
+                    </div>
+                    <div class="col">
+                        <i class="fas fa-pencil-alt edit-icon" data-field="username" title="Edit"></i>
+                        <i class="fas fa-check save-icon" data-field="username" title="Save" style="display: none;"></i>
+                        <i class="fas fa-times cancel-icon" data-field="username" title="Cancel" style="display: none;"></i>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="col">
+                        <label for="profile-name">Name:</label>
+                    </div>
+                    <div class="col">
+                        <span id="profile-name" class="editable">{{ user.name }}</span>
+                        <span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
+                    </div>
+                    <div class="col">
+                        <i class="fas fa-pencil-alt edit-icon" data-field="name" title="Edit"></i>
+                        <i class="fas fa-check save-icon" data-field="name" title="Save" style="display: none;"></i>
+                        <i class="fas fa-times cancel-icon" data-field="name" title="Cancel" style="display: none;"></i>
+                    </div>
+                </div>
+               
+                <div class="info-item">
+                    <div class="col">
+                        <label for="profile-phone">Phone:</label>
+                    </div>
+                    <div class="col">
+                        <span id="profile-phone" class="editable">{{ user.phone }}</span>
+                        <span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
+                    </div>
+                    <div class="col">
+                        <i class="fas fa-pencil-alt edit-icon" data-field="phone" title="Edit"></i>
+                        <i class="fas fa-check save-icon" data-field="phone" title="Save" style="display: none;"></i>
+                        <i class="fas fa-times cancel-icon" data-field="phone" title="Cancel" style="display: none;"></i>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <a href="#" id="changePasswordLink">Change password</a>
+                    <div id="changePasswordMessage" class="alert mt-3" role="alert" style="display: none;"></div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="previewOverlay">
+        <div class="preview" id="imagePreview"></div>
+        <button class="save-btn" id="btnSavePhoto" title="Save Photo"><i class="fas fa-save"></i></button>
+        <button class="close-btn" id="closePreview" title="Close"><i class="fas fa-times"></i></button>
+    </div>
+
+	<script src="../static/script/profile.js"></script>
+    
+</body>
+</html>
