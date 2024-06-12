@@ -10,6 +10,20 @@ document.addEventListener('DOMContentLoaded', function () {
         spinner.style.display = 'none';
     });
 
+    var videoFeed = document.getElementById('videoFeed');
+    var errorMessage = document.getElementById('errorMessage');
+
+    videoFeed.onerror = function () {
+        errorMessage.style.display = 'block';
+        videoFeed.style.display = 'none';
+        spinner.style.display = 'none';
+    };
+
+    videoFeed.onload = function () {
+        errorMessage.style.display = 'none';
+        videoFeed.style.display = 'block';
+        spinner.style.display = 'block';
+    };
 });
 
 window.onload = function () {

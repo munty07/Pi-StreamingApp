@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 $(document).ready(function () {
+    let usernameRegex = /^\S*$/
     let lettersRegex = /^[a-zA-Z -]*$/;//letter, line and space 
     let mailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
     let phoneRegex = /^(\+\d{1,2}\s?)?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/;
@@ -85,9 +86,24 @@ $(document).ready(function () {
         let regUsername = $(this).val().trim();
         let errorIcon = $(this).closest('.input-box').find('.error-icon');
 
-        if (!lettersRegex.test(regUsername)) {
+        if (!usernameRegex.test(regUsername)) {
             errorIcon.show();
-            errorIcon.attr('title', 'Username must contain only letters, hyphens, and spaces.');
+            errorIcon.attr('title', 'Username cannot contain spaces.');
+            $(this).addClass('error');
+        } else {
+            errorIcon.hide();
+            errorIcon.removeAttr('title');
+            $(this).removeClass('error');
+        }
+    });
+
+    $('#regName').on('input', function () {
+        let regName = $(this).val().trim();
+        let errorIcon = $(this).closest('.input-box').find('.error-icon');
+
+        if (!lettersRegex.test(regName)) {
+            errorIcon.show();
+            errorIcon.attr('title', 'Name must contain only letters, hyphens, and spaces.');
             $(this).addClass('error');
         } else {
             errorIcon.hide();
@@ -183,6 +199,7 @@ $(document).ready(function () {
 
     $('#registerForm').submit(function (e) {
         e.preventDefault();
+        console.log("Camera: " + $('#regCamera').val());
 
         $.ajax({
             url: '/register',

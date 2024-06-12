@@ -15,9 +15,19 @@
    
     <div class="container"> 
         <h2>Live Streaming</h2>
-        <br>
+
+        <div class="input-box">
+            <select name="regCamera" id="regCamera" required>
+                <option value="Camera1">Camera1</option>
+                <option value="Camera2">Camera2</option>
+                <option value="Camera3">Camera3</option>
+            </select>
+        </div>
         <div id="videoContainer">
             <img src="http://192.168.1.115:5000/video_feed" alt="Video Feed" id="videoFeed" width="640" height="480">  
+            <div id="errorMessage">
+                Connection to the webcam could not be established. Please check the webcam connection.
+            </div>
         </div>
         <div id="spinner">
             <img src="../static/img/load.gif" alt="Loading..."> 

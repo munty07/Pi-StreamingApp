@@ -19,7 +19,12 @@
 
 				<div class="input-box">
 					<input type="text" name="regUsername" id="regUsername" required>
-					<label for="regUsername">Name</label>
+					<label for="regUsername">Username</label>
+					<span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
+				</div>
+				<div class="input-box">
+					<input type="text" name="regName" id="regName" required>
+					<label for="regName">Name</label>
 					<span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
 				</div>
 				<div class="input-box">
@@ -49,6 +54,16 @@
 					<span class="error-icon" title=""><i class="fas fa-exclamation-circle" ></i></span>
 				</div>
 				
+				<div class="input-box">
+					<!-- <label for="regCamera">Select Camera</label> -->
+					<select name="regCamera" id="regCamera" required>
+						<option value="Camera1">Camera1</option>
+						<option value="Camera2">Camera2</option>
+						<option value="Camera3">Camera3</option>
+					</select>
+					<span class="error-icon" title=""><i class="fas fa-exclamation-circle"></i></span>
+				</div>
+
 				<button type="submit" id="btnRegister">Sign Up</button>
 			</form>
 		</div>

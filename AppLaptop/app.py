@@ -63,14 +63,18 @@ storage = firebase.storage()
 def register():
     # preluare informatii din formularul completat
     regUsername = request.form['regUsername'].strip()
+    regName = request.form['regName'].strip()
     regEmail = request.form['regEmail'].strip()
     regPassword = request.form['regPassword'].strip()
     regPhone = request.form['regPhone'].strip()
+    regCamera = request.form['regCamera'].strip()
+
+    print("Name", regName)
 
     try:
         user = auth.create_user_with_email_and_password(regEmail, regPassword)
         uid = user['localId']
-        data = {"username": regUsername, "email": regEmail, "phone": regPhone}
+        data = {"username": regUsername, "name": regName, "email": regEmail, "phone": regPhone, "camera": regCamera}
         db.child("Users").child(uid).set(data)
 
         flash('Account created successfully! Please log in.', 'success')

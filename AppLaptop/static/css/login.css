@@ -153,7 +153,8 @@ form {
     margin-bottom: 30px;
 	position: relative;
 }
-.input-box input{
+.input-box input,
+.input-box select{
     width: 100%;
     height: 100%;
     background: transparent;
@@ -175,14 +176,31 @@ form {
 }
 
 .input-box input:focus ~ label,
-.input-box label.active{
+.input-box input:valid ~ label,
+.input-box select:focus ~ label,
+.input-box select:valid ~ label,
+.input-box label.active {
 	bottom: 22px;
     font-size: 13px;
     color: var(--color-button-hover);
 }
 
-.input-box input:focus{
+.input-box input:focus,
+.input-box select:focus{
 	border-bottom: 2px solid var(--color-border);
+}
+
+.input-box select {
+	cursor: pointer;
+	padding-right: 20px; 
+	font-family: 'Montserrat', sans-serif;
+
+	font-weight: 600;
+}
+
+.input-box option{
+	color: var(--color-text);
+	background-color: var(--color-modal);
 }
 
 .container {
@@ -193,7 +211,7 @@ form {
 	overflow: hidden;
 	width: 768px;
 	max-width: 100%;
-	min-height: 480px;
+	min-height: 550px;
 }
 .form-container {
 	position: absolute;
