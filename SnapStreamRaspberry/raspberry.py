@@ -54,7 +54,7 @@ recording = False
 no_person_detected_timer = 0
 out = None
 stop_flag = threading.Event()
-camera_name = "Camera1"
+camera_name = "Camera3"
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 fullbody_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
@@ -95,9 +95,6 @@ def send_email(video_path, toaddr_list):
 
 def capture_video():
     global camera, out, recording, no_person_detected_timer
-
-    # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    # fullbody_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
     
     while not stop_flag.is_set():
         success, frame = camera.read()
@@ -172,6 +169,7 @@ def video_feed():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+
 def save_temp_video(video_file_path):
     try:
         temp_dir = tempfile.mkdtemp()
@@ -196,56 +194,6 @@ def convert_and_resize_video(input_path):
     except Exception as e:
         print(f"Error converting video: {e}")
         return None
-
-
-# @app.route('/upload_auto_video', methods=['POST'])
-# def upload_auto_video(video_path):
-#     print('UPLOAD...')
-#     try:
-#         user_id = 'bcepyT7eLBRdqXgU7xKg1nVZZFz2'
-#         storage_path = f"AutoLiveRecordings/{user_id}"
-#         unique_id = str(uuid.uuid4())
-#         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-#         filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.mp4")
-
-#         try:
-#             storage.child(storage_path).child(filename).put(video_path, content_type='video/mp4')
-#             print("Fisierul a fost incarcat cu succes in Firebase Storage.")
-#         except Exception as e:
-#             print("Error Firebase Storage:", e)
-#             return jsonify({"error": "Failed to upload file to Firebase Storage"}), 500
-
-#         try:
-#             date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
-#             file_size_in_mb = os.path.getsize(video_path) / (1024 * 1024)
-#             db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).push({
-#                 "details": {
-#                     "timestamp": date_time,
-#                     "size":  f"{file_size_in_mb:.2f} MB",
-#                     "filename": filename,
-#                     "storage_path": f"{storage_path}/{filename}"
-#                 }
-#             })
-#             print('The recording has been successfully saved in the database!')
-#         except Exception as e:
-#             print("Error Firebase Database:", e)
-#             return jsonify({"error": "Failed to save to Firebase Database"}), 500
-
-#         try:
-#             send_email(video_path, 'poli.mastersiaps@gmail.com')
-#         except Exception as e:
-#             print("Error sending email:", e)
-#             return jsonify({"error": "Email sending failed..."}), 500
-        
-#         try:
-#             os.remove(video_path)
-#         except Exception as e:
-#             print("Error deleting temporary video file:", e)
-
-#         return jsonify({"message": "The recording has been successfully saved!"})
-#     except Exception as e:
-#         print('Failed to upload video:', str(e))
-#         return jsonify({"error": "Failed to process the upload"}), 500
 
 
 @app.route('/upload_auto_video', methods=['POST'])

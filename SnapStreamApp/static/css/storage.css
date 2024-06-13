@@ -150,12 +150,18 @@ body {
     font-size: 20px;
 }
 
+#filterContainer{
+    display: ruby-text;
+
+}
 /* FILTER BY DATE */
-#dateFilter{
+#dateFilter, #cameraFilter{
     cursor: pointer;
     background-color: var(--color-button);
     border-color: var(--color-border);
     color: var(--color-text);
+    width: auto; 
+    margin: auto;
 }
 
 #pagination{

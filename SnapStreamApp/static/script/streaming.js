@@ -123,6 +123,7 @@ window.onload = function () {
         capturedCanvas = document.getElementById('capturedCanvas');
         var canvas = document.createElement("canvas");
         var ctx = canvas.getContext("2d");
+        var selectedCamera = document.getElementById('regCamera').value;
 
         if (isPaused) {
             var videoWidth = parseInt(capturedCanvas.getAttribute("data-video-width"));
@@ -148,7 +149,7 @@ window.onload = function () {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ image: dataURL }),
+            body: JSON.stringify({ image: dataURL, camera: selectedCamera }),
         })
             .then(response => response.json())
             .then(data => {
@@ -185,20 +186,18 @@ window.onload = function () {
 
     function startRecording() {
         var canvas = document.getElementById("videoCanvas");
+        var selectedCamera = document.getElementById('regCamera').value;
 
-        // Verifică dacă canvas-ul există
         if (!canvas) {
             console.error("Canvas element not found");
             return;
         }
 
-        // Verifică dimensiunea canvas-ului
         if (canvas.width === 0 || canvas.height === 0) {
             console.error("Canvas dimensions are not set");
             return;
         }
 
-        // Verifică contextul de desenare
         var ctx = canvas.getContext("2d");
         if (!ctx) {
             console.error("Failed to get 2D context for canvas");
@@ -224,6 +223,7 @@ window.onload = function () {
             var blob = new Blob(recordedBlobs, { type: 'video/webm' });
             var formData = new FormData();
             formData.append('video', blob, 'manual_recording.webm');
+            formData.append('camera', selectedCamera);
 
             fetch('/upload_manual_video', {
                 method: 'POST',

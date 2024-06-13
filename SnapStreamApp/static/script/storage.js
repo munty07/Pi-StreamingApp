@@ -2,10 +2,11 @@ var btnCaptures = $('#liveCapturesBtn');
 var btnAutoLiveCaptures = $('#autoLiveCapturesBtn');
 var btnRecordings = $('#liveRecordingsBtn');
 var btnAutoLiveRecordings = $('#autoLiveRecordingsBtn');
+var cameraFilter = $('#cameraFilter');
 
 $(document).ready(function () {
     var currentPage = 1;
-
+    $('#cameraFilter').val("all");
     $('#dateFilter').val("");
     if (localStorage.getItem('autoShowLiveRecordings') === 'false') {
         loadCaptures();
@@ -29,6 +30,7 @@ $(document).ready(function () {
 
     function handleStateChange(state) {
         $('#dateFilter').val("");
+        $('#cameraFilter').val("all");
         switch (state) {
             case 'captures':
                 currentState = 'captures';
@@ -65,26 +67,49 @@ $(document).ready(function () {
         var page = parseInt($(this).data('page'));
         currentPage = page;
         if (currentState == 'captures') {
-            loadCaptures($('#dateFilter').val(), currentPage);
+            loadCaptures($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         } else if (currentState == 'recordings') {
-            loadRecordings($('#dateFilter').val(), currentPage);
+            loadRecordings($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         } else if (currentState == 'autoCaptures') {
-            loadAutoLiveCaptures($('#dateFilter').val(), currentPage);
+            loadAutoLiveCaptures($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         } else {
-            loadAutoLiveRecordings($('#dateFilter').val(), currentPage);
+            loadAutoLiveRecordings($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
+        }
+    });
+
+    $.ajax({
+        url: '/get_user_cameras',
+        type: 'GET',
+        success: function (response) {
+            if (response.error) {
+                console.error(response.error);
+                return;
+            }
+
+            if (Array.isArray(response)) {
+                var select = $('#cameraFilter');
+                response.forEach(function (camera) {
+                    select.append('<option value="' + camera + '">' + camera + '</option>');
+                });
+            } else {
+                console.error('Expected an array but got:', response);
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error:', error);
         }
     });
 
     // FILTER BY DATE
-    $('#dateFilter').change(function () {
+    $('#cameraFilter, #dateFilter').change(function () {
         if (currentState == 'captures') {
-            loadCaptures($(this).val());
+            loadCaptures($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         } else if (currentState == 'recordings') {
-            loadRecordings($(this).val());
+            loadRecordings($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         } else if (currentState == 'autoCaptures') {
-            loadAutoLiveCaptures($(this).val());
+            loadAutoLiveCaptures($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         } else {
-            loadAutoLiveRecordings($(this).val());
+            loadAutoLiveRecordings($('#dateFilter').val(), currentPage, $('#cameraFilter').val());
         }
     });
 });
@@ -143,6 +168,7 @@ function createPaginationButton(label, page, isActive = false, isDisabled = fals
 $('#liveCapturesBtn').click(function () {
     currentState = 'captures';
     $('#dateFilter').val("");
+    $('#cameraFilter').val("all");
     loadCaptures();
     btnCaptures.addClass('active-submenu');
     btnRecordings.removeClass('active-submenu');
@@ -150,10 +176,10 @@ $('#liveCapturesBtn').click(function () {
     btnAutoLiveRecordings.removeClass('active-submenu');
 });
 
-function loadCaptures(selectedDate = '', currentPage = 1) {
+function loadCaptures(selectedDate = '', currentPage = 1, selectedCamera = 'all') {
     $.ajax({
         url: '/get_images',
-        data: { date: selectedDate, page: currentPage },
+        data: { date: selectedDate, page: currentPage, camera: selectedCamera },
         type: 'GET',
         success: function (response) {
             var imagesContainer = $('#imagesContainer');
@@ -192,7 +218,7 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
                             </div>
                             <div class="overlay-buttons">
                                 <button class="btn btn-custom preview-btn clickable" data-imgsrc="${image.url}"><i class="fa fa-eye"></i></button>
-                                <button class="btn btn-danger delete-btn" data-storage-path="${image.storage_path}" data-unique-id="${image.unique_id}"><i class="fa fa-trash"></i></button>
+                                <button class="btn btn-danger delete-btn" data-storage-path="${image.storage_path}" data-unique-id="${image.unique_id}" data-camera-name="${image.camera_name}"><i class="fa fa-trash"></i></button>
                             </div>
                         </div>
                     `;
@@ -208,6 +234,7 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
 
                     var uniqueId = $(this).data('unique-id');
                     var storagePath = $(this).data('storage-path');
+                    var cameraName = $(this).data('camera-name');
 
                     Swal.fire({
                         title: 'Are you sure?',
@@ -232,7 +259,7 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
                                 url: '/delete_image',
                                 type: 'POST',
                                 contentType: 'application/json',
-                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath, 'camera_name': cameraName }),
                                 success: function (response) {
                                     Swal.fire({
                                         title: 'Deleted!',
@@ -247,7 +274,7 @@ function loadCaptures(selectedDate = '', currentPage = 1) {
                                     });
 
                                     if (response.status === 'success') {
-                                        loadCaptures(selectedDate); // Reload images after deletion
+                                        loadCaptures(selectedDate, currentPage, selectedCamera);
                                     }
                                 },
                                 error: function (error) {
@@ -285,6 +312,7 @@ function showPreview(imageSrc) {
 $('#autoLiveCapturesBtn').click(function () {
     currentState = 'autoCaptures';
     $('#dateFilter').val("");
+    $('#cameraFilter').val("all");
     loadAutoLiveCaptures();
     btnAutoLiveCaptures.addClass('active-submenu');
     btnRecordings.removeClass('active-submenu');
@@ -292,10 +320,10 @@ $('#autoLiveCapturesBtn').click(function () {
     btnCaptures.removeClass('active-submenu');
 });
 
-function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
+function loadAutoLiveCaptures(selectedDate = '', currentPage = 1, selectedCamera = 'all') {
     $.ajax({
         url: '/get_autoimages',
-        data: { date: selectedDate, page: currentPage },
+        data: { date: selectedDate, page: currentPage, camera: selectedCamera },
         type: 'GET',
         success: function (response) {
             var imagesContainer = $('#imagesContainer');
@@ -334,7 +362,7 @@ function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
                             </div>
                             <div class="overlay-buttons">
                                 <button class="btn btn-custom preview-btn clickable" data-imgsrc="${image.url}"><i class="fa fa-eye"></i></button>
-                                <button class="btn btn-danger delete-btn" data-storage-path="${image.storage_path}" data-unique-id="${image.unique_id}"><i class="fa fa-trash"></i></button>
+                                <button class="btn btn-danger delete-btn" data-storage-path="${image.storage_path}" data-unique-id="${image.unique_id}" data-camera-name="${image.camera_name}"><i class="fa fa-trash"></i></button>
                             </div>
                         </div>
                     `;
@@ -350,6 +378,7 @@ function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
 
                     var uniqueId = $(this).data('unique-id');
                     var storagePath = $(this).data('storage-path');
+                    var cameraName = $(this).data('camera-name');
 
                     Swal.fire({
                         title: 'Are you sure?',
@@ -374,7 +403,7 @@ function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
                                 url: '/delete_autoimage',
                                 type: 'POST',
                                 contentType: 'application/json',
-                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath, 'camera_name': cameraName }),
                                 success: function (response) {
                                     Swal.fire({
                                         title: 'Deleted!',
@@ -389,7 +418,7 @@ function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
                                     });
 
                                     if (response.status === 'success') {
-                                        loadAutoLiveCaptures(selectedDate); // Reload images after deletion
+                                        loadAutoLiveCaptures(selectedDate, currentPage, selectedCamera);
                                     }
                                 },
                                 error: function (error) {
@@ -422,6 +451,7 @@ function loadAutoLiveCaptures(selectedDate = '', currentPage = 1) {
 $('#liveRecordingsBtn').click(function () {
     currentState = 'recordings';
     $('#dateFilter').val("");
+    $('#cameraFilter').val("all");
     loadRecordings();
     btnRecordings.addClass('active-submenu');
     btnAutoLiveCaptures.removeClass('active-submenu');
@@ -429,10 +459,10 @@ $('#liveRecordingsBtn').click(function () {
     btnCaptures.removeClass('active-submenu');
 });
 
-function loadRecordings(selectedDate = '', currentPage = 1) {
+function loadRecordings(selectedDate = '', currentPage = 1, selectedCamera = 'all') {
     $.ajax({
         url: '/get_videos',
-        data: { date: selectedDate, page: currentPage },
+        data: { date: selectedDate, page: currentPage, camera: selectedCamera },
         type: 'GET',
         success: function (response) {
             var imagesContainer = $('#imagesContainer');
@@ -477,7 +507,7 @@ function loadRecordings(selectedDate = '', currentPage = 1) {
                                 </div>
                                 <div class="overlay-buttons">
                                     <button class="btn btn-custom preview-btn" data-videosrc="${video.url}"><i class="fa fa-eye"></i></button>
-                                    <button class="btn btn-danger delete-btn" data-storage-path="${video.storage_path}" data-unique-id="${video.unique_id}"><i class="fa fa-trash"></i></button>
+                                    <button class="btn btn-danger delete-btn" data-storage-path="${video.storage_path}" data-unique-id="${video.unique_id}" data-camera-name="${video.camera_name}"><i class="fa fa-trash"></i></button>
                                 </div>
                             </div>
                         `;
@@ -493,6 +523,7 @@ function loadRecordings(selectedDate = '', currentPage = 1) {
 
                     var uniqueId = $(this).data('unique-id');
                     var storagePath = $(this).data('storage-path');
+                    var cameraName = $(this).data('camera-name');
 
                     Swal.fire({
                         title: 'Are you sure?',
@@ -517,7 +548,7 @@ function loadRecordings(selectedDate = '', currentPage = 1) {
                                 url: '/delete_video',
                                 type: 'POST',
                                 contentType: 'application/json',
-                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath, 'camera_name': cameraName }),
                                 success: function (response) {
                                     Swal.fire({
                                         title: 'Deleted!',
@@ -532,7 +563,7 @@ function loadRecordings(selectedDate = '', currentPage = 1) {
                                     });
 
                                     if (response.status === 'success') {
-                                        loadRecordings(selectedDate); // Reload images after deletion
+                                        loadRecordings(selectedDate, currentPage, selectedCamera);
                                     }
                                 },
                                 error: function (error) {
@@ -584,6 +615,8 @@ function showVideoPreview(videoSrc) {
 $('#autoLiveRecordingsBtn').click(function () {
     currentState = 'autoRecordings';
     $('#dateFilter').val("");
+    $('#cameraFilter').val("all");
+    // cameraFilter.show();
     loadAutoLiveRecordings();
     btnAutoLiveRecordings.addClass('active-submenu');
     btnAutoLiveCaptures.removeClass('active-submenu');
@@ -591,10 +624,10 @@ $('#autoLiveRecordingsBtn').click(function () {
     btnCaptures.removeClass('active-submenu');
 });
 
-function loadAutoLiveRecordings(selectedDate = '', currentPage = 1) {
+function loadAutoLiveRecordings(selectedDate = '', currentPage = 1, selectedCamera = 'all') {
     $.ajax({
         url: '/get_autovideos',
-        data: { date: selectedDate, page: currentPage },
+        data: { date: selectedDate, page: currentPage, camera: selectedCamera },
         type: 'GET',
         success: function (response) {
             var imagesContainer = $('#imagesContainer');
@@ -639,7 +672,7 @@ function loadAutoLiveRecordings(selectedDate = '', currentPage = 1) {
                                 </div>
                                 <div class="overlay-buttons">
                                     <button class="btn btn-custom preview-btn" data-videosrc="${video.url}"><i class="fa fa-eye"></i></button>
-                                    <button class="btn btn-danger delete-btn" data-storage-path="${video.storage_path}" data-unique-id="${video.unique_id}"><i class="fa fa-trash"></i></button>
+                                    <button class="btn btn-danger delete-btn" data-storage-path="${video.storage_path}" data-unique-id="${video.unique_id}" data-camera-name="${video.camera_name}"><i class="fa fa-trash"></i></button>
                                 </div>
                             </div>
                         `;
@@ -655,6 +688,7 @@ function loadAutoLiveRecordings(selectedDate = '', currentPage = 1) {
 
                     var uniqueId = $(this).data('unique-id');
                     var storagePath = $(this).data('storage-path');
+                    var cameraName = $(this).data('camera-name');
 
                     Swal.fire({
                         title: 'Are you sure?',
@@ -679,7 +713,7 @@ function loadAutoLiveRecordings(selectedDate = '', currentPage = 1) {
                                 url: '/delete_autovideo',
                                 type: 'POST',
                                 contentType: 'application/json',
-                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath }),
+                                data: JSON.stringify({ 'unique_id': uniqueId, 'storage_path': storagePath, 'camera_name': cameraName }),
                                 success: function (response) {
                                     Swal.fire({
                                         title: 'Deleted!',
@@ -694,7 +728,7 @@ function loadAutoLiveRecordings(selectedDate = '', currentPage = 1) {
                                     });
 
                                     if (response.status === 'success') {
-                                        loadAutoLiveRecordings(selectedDate); // Reload images after deletion
+                                        loadAutoLiveRecordings(selectedDate, currentPage, selectedCamera);
                                     }
                                 },
                                 error: function (error) {

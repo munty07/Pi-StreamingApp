@@ -50,19 +50,6 @@ auth = firebase.auth()
 db = firebase.database()
 storage = firebase.storage()
 
-########################################################
-# camera = cv2.VideoCapture(0)
-# recording = False
-# no_motion_timer = 0
-# out = None
-# stop_flag = threading.Event()
-########################################################
-
-
-
-
-
-
 
 #######################################################################
 ############################ REGISTER PAGE ############################ 
@@ -144,7 +131,6 @@ def index():
 
     return render_template('login.html', login_message=login_message, login_alert_class=alert_class)
 
-
 #######################################################################
 ############################# HOME PAGE ############################### 
 #######################################################################
@@ -201,32 +187,6 @@ def streaming():
         return redirect(url_for('index'))
 
 
-def save_temp_video(video_file_path):
-    try:
-        temp_dir = tempfile.mkdtemp()
-        video_file_name = os.path.basename(video_file_path)
-        temp_video_path = os.path.join(temp_dir, video_file_name)
-
-        shutil.copyfile(video_file_path, temp_video_path)
-
-        return temp_video_path
-    except Exception as e:
-        print("An error occurred while saving temp video:", e)
-        return None
-
-
-def convert_and_resize_video(input_path):
-    output_path = input_path.replace('.avi', '.mp4')
-    try:
-        clip = VideoFileClip(input_path)
-        clip_resized = clip.resize(width=640)  
-        clip_resized.write_videofile(output_path, codec='libx264', audio_codec='aac')
-        return output_path
-    except Exception as e:
-        print(f"Error converting video: {e}")
-        return None
-
-
 @app.route('/upload_manual_video', methods=['POST'])
 def upload_manual_video():
     try:
@@ -236,12 +196,14 @@ def upload_manual_video():
 
         if 'user' not in session:
             return jsonify({"error": "User not authenticated"}), 403  
-
+        
         user_id = session['user_id']
-        storage_path = f"LiveRecordings/{user_id}"
+        selected_camera = request.form.get('camera', 'unknown') 
+
+        storage_path = f"LiveRecordings/{user_id}/{selected_camera}"
         unique_id = str(uuid.uuid4())
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = secure_filename(f"{user_id}_{unique_id}_{timestamp}.mp4")
+        filename = secure_filename(f"{selected_camera}_{user_id}_{unique_id}_{timestamp}.mp4")
 
         temp_path = f"temp_{filename}"
         video_file.save(temp_path)
@@ -256,7 +218,7 @@ def upload_manual_video():
         try:
             date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
             file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
-            db.child("UserCaptures").child("LiveRecordings").child(user_id).push({
+            db.child("UserCaptures").child("LiveRecordings").child(user_id).child(selected_camera).push({
                 "details": {
                     "timestamp": date_time,
                     "size":  f"{file_size_in_mb:.2f} MB",
@@ -280,40 +242,6 @@ def upload_manual_video():
         return jsonify({"error": "Failed to process the upload"}), 500
 
 
-def capture_and_upload_image(frame):
-    try:
-        time.sleep(3)
-        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        
-        user_id = session['user_id']
-        unique_id = str(uuid.uuid4())
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-        date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
-        unique_filename = f"{user_id}_{timestamp}.png"
-        temp_path = f"temp_{unique_filename}"
-        
-        image.save(temp_path)
-
-        storage_path = f"AutoLiveCaptures/{user_id}/{unique_filename}"
-        storage.child(storage_path).put(temp_path)
-        file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
-
-        db.child("UserCaptures").child("AutoLiveCaptures").child(user_id).child(unique_id).set({
-            "details": {
-                "timestamp": date_time,
-                "size":  f"{file_size_in_mb:.2f} MB",
-                "filename": unique_filename,
-                "storage_path": storage_path
-            }
-        })
-
-        os.remove(temp_path)
-
-        print("Image captured and uploaded successfully!")
-
-    except Exception as e:
-        print("An error occurred while capturing and uploading the image:", e)
-
 #######################################################################
 ############################ STORAGE PAGE ############################# 
 #######################################################################
@@ -328,18 +256,19 @@ def upload_image():
     image_data = base64.b64decode(image_data.split(',')[1])
     image = Image.open(BytesIO(image_data))
 
+    selected_camera = data.get('camera', 'unknown')
     unique_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
-    unique_filename = f"{user_id}_{timestamp}.png"
+    unique_filename = f"{selected_camera}_{user_id}_{timestamp}.png"
     temp_path = f"temp_{unique_filename}"
     image.save(temp_path)
 
-    storage_path = f"LiveCaptures/{user_id}/{unique_filename}"
+    storage_path = f"LiveCaptures/{user_id}/{selected_camera}/{unique_filename}"
     storage.child(storage_path).put(temp_path)
     file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
 
-    db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).set({
+    db.child("UserCaptures").child("LiveCaptures").child(user_id).child(selected_camera).child(unique_id).set({
         "details": {
             "timestamp": date_time,
             "size":  f"{file_size_in_mb:.2f} MB",
@@ -351,10 +280,10 @@ def upload_image():
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
 
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# def allowed_file(filename):
+#     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
+#     return '.' in filename and \
+#            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # storage
 @app.route('/storage')
@@ -377,51 +306,7 @@ def get_images():
 
     user_id = session['user_id']
     selected_date = request.args.get('date', '')
-    images_details = db.child("UserCaptures").child("LiveCaptures").child(user_id).get()
-
-    images = [] 
-    if images_details.val():
-        for image in images_details.each():
-            image_data = image.val()['details']
-            storage_path = image_data['storage_path']
-            size = image_data.get('size', 'N/A')  
-            timestamp = image_data.get('timestamp', 'N/A') 
-            try:
-                image_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
-            except ValueError:
-                continue 
-
-            url = storage.child(storage_path).get_url(None)
-            unique_id = image.key()
-
-            if selected_date:
-                if image_date == selected_date:
-                    images.append({
-                        'url': url,
-                        'size': size,
-                        'timestamp': timestamp,
-                        'unique_id': unique_id,
-                        'storage_path': storage_path
-                    })
-            else:
-                images.append({
-                    'url': url,
-                    'size': size,
-                    'timestamp': timestamp,
-                    'unique_id': unique_id,
-                    'storage_path': storage_path
-                })
-
-    return jsonify(images)
-
-
-@app.route('/get_autoimages')
-def get_autoimages():
-    if 'user' not in session:
-        return jsonify([])  
-
-    user_id = session['user_id']
-    selected_date = request.args.get('date', '')
+    selected_camera = request.args.get('camera', 'all')
 
     user_cameras = db.child("UsersCameras").child(user_id).get()
     if not user_cameras.val():
@@ -431,7 +316,11 @@ def get_autoimages():
     for camera in user_cameras.each():
         camera_name = camera.key()
 
-        images_details = db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).get()
+        if selected_camera != 'all' and camera_name != selected_camera:
+            continue
+
+        images_details = db.child("UserCaptures").child("LiveCaptures").child(user_id).child(camera_name).get()
+
         if images_details.val():
             for image in images_details.each():
                 image_data = image.val()['details']
@@ -453,7 +342,8 @@ def get_autoimages():
                             'size': size,
                             'timestamp': timestamp,
                             'unique_id': unique_id,
-                            'storage_path': storage_path
+                            'storage_path': storage_path,
+                            'camera_name': camera_name  
                         })
                 else:
                     images.append({
@@ -461,10 +351,71 @@ def get_autoimages():
                         'size': size,
                         'timestamp': timestamp,
                         'unique_id': unique_id,
-                        'storage_path': storage_path
+                        'storage_path': storage_path,
+                        'camera_name': camera_name
                     })
 
     return jsonify(images)
+
+
+@app.route('/get_autoimages')
+def get_autoimages():
+    if 'user' not in session:
+        return jsonify([])
+
+    user_id = session['user_id']
+    selected_date = request.args.get('date', '')
+    selected_camera = request.args.get('camera', 'all')
+
+    user_cameras = db.child("UsersCameras").child(user_id).get()
+    if not user_cameras.val():
+        return jsonify([])  # Nu sunt camere asociate
+
+    images = []
+    for camera in user_cameras.each():
+        camera_name = camera.key()
+
+        if selected_camera != 'all' and camera_name != selected_camera:
+            continue
+
+        images_details = db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).get()
+        if images_details.val():
+            for image in images_details.each():
+                image_data = image.val()['details']
+                storage_path = image_data['storage_path']
+                size = image_data.get('size', 'N/A')
+                timestamp = image_data.get('timestamp', 'N/A')
+                try:
+                    image_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+                except ValueError:
+                    continue
+
+                url = storage.child(storage_path).get_url(None)
+                unique_id = image.key()
+
+                if selected_date:
+                    if image_date == selected_date:
+                        images.append({
+                            'url': url,
+                            'size': size,
+                            'timestamp': timestamp,
+                            'unique_id': unique_id,
+                            'storage_path': storage_path,
+                            'camera_name': camera_name  
+                        })
+                else:
+                    images.append({
+                        'url': url,
+                        'size': size,
+                        'timestamp': timestamp,
+                        'unique_id': unique_id,
+                        'storage_path': storage_path,
+                        'camera_name': camera_name  
+                    })
+
+    return jsonify(images)
+
+
 
 
 @app.route('/get_videos')
@@ -474,87 +425,55 @@ def get_videos():
 
     user_id = session['user_id']
     selected_date = request.args.get('date', '')
-    video_details = db.child("UserCaptures").child("LiveRecordings").child(user_id).get()
+    selected_camera = request.args.get('camera', 'all')
+
+    user_cameras = db.child("UsersCameras").child(user_id).get()
+    if not user_cameras.val():
+        return jsonify([])  # Nu sunt camere asociate
 
     videos = [] 
-    if video_details.val():
-        for video in video_details.each():
-            video_data = video.val()['details']
-            storage_path = video_data['storage_path']
-            size = video_data.get('size', 'N/A')  
-            timestamp = video_data.get('timestamp', 'N/A')  
-            try:
-                video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
-            except ValueError:
-                continue 
+    for camera in user_cameras.each():
+        camera_name = camera.key()
 
-            url = storage.child(storage_path).get_url(None)
-            unique_id = video.key()
+        if selected_camera != 'all' and camera_name != selected_camera:
+            continue
 
-            if selected_date:
-                if video_date == selected_date:
+        video_details = db.child("UserCaptures").child("LiveRecordings").child(user_id).child(camera_name).get()
+        if video_details.val():
+            for video in video_details.each():
+                video_data = video.val()['details']
+                storage_path = video_data['storage_path']
+                size = video_data.get('size', 'N/A')  
+                timestamp = video_data.get('timestamp', 'N/A')  
+                try:
+                    video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
+                except ValueError:
+                    continue 
+
+                url = storage.child(storage_path).get_url(None)
+                unique_id = video.key()
+
+                if selected_date:
+                    if video_date == selected_date:
+                        videos.append({
+                            'url': url,
+                            'size': size,
+                            'timestamp': timestamp,
+                            'unique_id': unique_id,
+                            'storage_path': storage_path,
+                            'camera_name': camera_name  
+                        })
+                else:
                     videos.append({
                         'url': url,
                         'size': size,
                         'timestamp': timestamp,
                         'unique_id': unique_id,
-                        'storage_path': storage_path
+                        'storage_path': storage_path,
+                        'camera_name': camera_name  
                     })
-            else:
-                videos.append({
-                    'url': url,
-                    'size': size,
-                    'timestamp': timestamp,
-                    'unique_id': unique_id,
-                    'storage_path': storage_path
-                })
 
     return jsonify(videos)
-
-# @app.route('/get_autovideos')
-# def get_autovideos():
-#     if 'user' not in session:
-#         return jsonify([])  
-
-#     user_id = session['user_id']
-#     selected_date = request.args.get('date', '')
-#     video_details = db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).get()
-
-#     videos = [] 
-#     if video_details.val():
-#         for video in video_details.each():
-#             video_data = video.val()['details']
-#             storage_path = video_data['storage_path']
-#             size = video_data.get('size', 'N/A')  
-#             timestamp = video_data.get('timestamp', 'N/A')  
-#             try:
-#                 video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
-#             except ValueError:
-#                 continue 
-
-#             url = storage.child(storage_path).get_url(None)
-#             unique_id = video.key()
-
-#             if selected_date:
-#                 if video_date == selected_date:
-#                     videos.append({
-#                         'url': url,
-#                         'size': size,
-#                         'timestamp': timestamp,
-#                         'unique_id': unique_id,
-#                         'storage_path': storage_path
-#                     })
-#             else:
-#                 videos.append({
-#                     'url': url,
-#                     'size': size,
-#                     'timestamp': timestamp,
-#                     'unique_id': unique_id,
-#                     'storage_path': storage_path
-#                 })
-
-#     return jsonify(videos)
-
 
 
 @app.route('/get_autovideos')
@@ -564,14 +483,18 @@ def get_autovideos():
 
     user_id = session['user_id']
     selected_date = request.args.get('date', '')
-  
+    selected_camera = request.args.get('camera', 'all')
+
     user_cameras = db.child("UsersCameras").child(user_id).get()
     if not user_cameras.val():
         return jsonify([])  # Nu sunt camere asociate
-
+    
     videos = [] 
     for camera in user_cameras.each():
         camera_name = camera.key()
+
+        if selected_camera != 'all' and camera_name != selected_camera:
+            continue
 
         video_details = db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).get()
 
@@ -596,7 +519,8 @@ def get_autovideos():
                             'size': size,
                             'timestamp': timestamp,
                             'unique_id': unique_id,
-                            'storage_path': storage_path
+                            'storage_path': storage_path,
+                            'camera_name': camera_name  
                         })
                 else:
                     videos.append({
@@ -604,7 +528,8 @@ def get_autovideos():
                         'size': size,
                         'timestamp': timestamp,
                         'unique_id': unique_id,
-                        'storage_path': storage_path
+                        'storage_path': storage_path,
+                        'camera_name': camera_name  
                     })
 
     return jsonify(videos)
@@ -623,9 +548,10 @@ def delete_image():
     data = request.get_json()
     user_id = session['user_id']
     unique_id = data.get('unique_id')
+    camera_name = data.get('camera_name')
 
     try:
-        db.child("UserCaptures").child("LiveCaptures").child(user_id).child(unique_id).remove()
+        db.child("UserCaptures").child("LiveCaptures").child(user_id).child(camera_name).child(unique_id).remove()
 
         return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
     except Exception as e:
@@ -640,9 +566,10 @@ def delete_autoimage():
     data = request.get_json()
     user_id = session['user_id']
     unique_id = data.get('unique_id')
+    camera_name = data.get('camera_name')
 
     try:
-        db.child("UserCaptures").child("AutoLiveCaptures").child(user_id).child(unique_id).remove()
+        db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).child(unique_id).remove()
 
         return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
     except Exception as e:
@@ -658,9 +585,11 @@ def delete_video():
     data = request.get_json()
     user_id = session['user_id']
     unique_id = data.get('unique_id')
+    camera_name = data.get('camera_name')
 
     try:
-        db.child("UserCaptures").child("LiveRecordings").child(user_id).child(unique_id).remove()
+
+        db.child("UserCaptures").child("LiveRecordings").child(user_id).child(camera_name).child(unique_id).remove()
 
         return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
     except Exception as e:
@@ -675,9 +604,10 @@ def delete_autovideo():
     data = request.get_json()
     user_id = session['user_id']
     unique_id = data.get('unique_id')
+    camera_name = data.get('camera_name')
 
     try:
-        db.child("UserCaptures").child("AutoLiveRecordings").child(user_id).child(unique_id).remove()
+        db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).child(unique_id).remove()
 
         return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
     except Exception as e:
@@ -859,15 +789,15 @@ def logout():
     return redirect('/')
 
 
-@app.route('/fetch_image', methods=['POST'])
-def fetch_image():
-    image_url = request.json['url']
-    try:
-        response = requests.get(image_url)
-        response.raise_for_status()
-        return jsonify({"image_data": base64.b64encode(response.content).decode('utf-8')})
-    except requests.RequestException as e:
-        return jsonify({"error": str(e)}), 500
+# @app.route('/fetch_image', methods=['POST'])
+# def fetch_image():
+#     image_url = request.json['url']
+#     try:
+#         response = requests.get(image_url)
+#         response.raise_for_status()
+#         return jsonify({"image_data": base64.b64encode(response.content).decode('utf-8')})
+#     except requests.RequestException as e:
+#         return jsonify({"error": str(e)}), 500
 
 
 
