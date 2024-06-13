@@ -1,0 +1,130 @@
+:root {
+  --color-border-hover: #fa698a;
+  --color-border: #cd294f;
+  --color-button-hover: #ff2770;
+  --color-button: #c72f62;
+  --color-error: #d43f3a;
+  --color-alert: #e2054f;
+  --color-bg: #191d2b;
+  --color-modal: #2c303a;
+  --color-info: #6a6f7d;
+  --color-text: #fff;
+  --color-opacity: rgba(0, 0, 0, 0.8);
+  --color-btn: rgba(255, 255, 255, 0.8);
+  --color-black: #000;
+  --color-menu-hover: #3c414f;
+}
+
+.menu {
+  margin: 20px;
+  list-style-type: none;
+  padding: 0;
+  background-color: var(--color-modal);
+  overflow: hidden;
+  display: flex; 
+  align-items: center; 
+
+  position: relative;
+  z-index: 3;
+}
+
+.menu li a {
+  display: block;
+  color: var(--color-text);
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.menu li.active a {
+  background-color: var(--color-button);
+}
+
+.menu li a:hover {
+  background-color: var(--color-menu-hover);
+}
+
+.top-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.user-info {
+  display: flex; 
+  align-items: center;
+  margin-left: auto; 
+}
+
+.user-info span {
+  float: left;
+  margin-right: 20px;
+}
+
+.btn-logout {
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background-color: var(--color-button-hover) !important;
+}
+
+.btn-logout i {
+  margin-right: 10px;
+}
+
+.burger-icon {
+  display: none; 
+}
+
+.open-menu {
+  display: block !important;
+}
+
+@media screen and (max-width: 768px) {
+  .menu li {
+    display: none; 
+  }
+
+  .menu{
+    display: block;
+    text-align: right;
+    position: fixed;
+    width: 92vw;
+    z-index: 5;
+  }
+  
+  .burger-icon {
+    display: block !important;
+    cursor: pointer;
+    padding: 10px;
+  }
+
+  .user-info {
+    flex: 1 0 100%;
+    order: 1; 
+    text-align: center; 
+  }
+
+  .user-info span {
+    display: none;
+  }
+
+  .menu.open-menu li {
+    display: block; 
+    text-align: right;
+  }
+
+  #menuIcon{
+    font-size: 25px;
+  }
+
+  #menuIcon:hover{
+    color: var(--color-button-hover);
+  }
+}

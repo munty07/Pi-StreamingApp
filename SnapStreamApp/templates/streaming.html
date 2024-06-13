@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+{% from "menu.html" import render_menu %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../static/img/logo.png" type="x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="../static/css/streaming.css">
+    <link rel="stylesheet" href="../static/css/menu.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>Live Streaming</title>
+</head>
+<body>
+    {{ render_menu('streaming', username) }}
+   
+    <div class="container"> 
+        <h2>Live Streaming</h2>
+
+        <div class="input-box">
+            <select name="regCamera" id="regCamera" required>
+            </select>
+        </div>
+
+        <div id="videoContainer">
+            <img alt="Video Feed" id="videoFeed" width="640" height="480" crossorigin="anonymous">  
+            <canvas id="videoCanvas" style="display: none;"></canvas>
+            <div id="errorMessage" style="display: none;">
+                Connection to the webcam could not be established. Please check the webcam connection.
+            </div>
+        </div>
+        <!-- <div id="videoContainer">
+            <img src="http://192.168.1.115:5000/video_feed" alt="Video Feed" id="videoFeed" width="640" height="480">  
+            <div id="errorMessage">
+                Connection to the webcam could not be established. Please check the webcam connection.
+            </div>
+        </div> -->
+        <div id="spinner">
+            <img src="../static/img/load.gif" alt="Loading..."> 
+            <video autoplay playsinline></video> 
+            <img id="pauseImage" style="display:none;">
+        </div>
+        <div class="controls">
+            <button id="pauseButton" class="btn"><i class="fas fa-pause"></i> Pause </button>
+            <button id="captureButton" class="btn"><i class="fas fa-camera"></i> Capture </button>
+            <button id="recordingButton" class="btn"><i class="fas fa-video"></i> Recording </button>
+            <button id="zoomInButton" class="btn"><i class="fas fa-search-plus"></i> Zoom In </button>
+            <button id="zoomOutButton" class="btn"><i class="fas fa-search-minus"></i> Zoom Out </button>
+        </div>
+
+        <div id="successModalCapture" class="modal">
+            <div class="modal-content">
+                <span class="close-success-captures">&times;</span>
+                <p id="successMessageCapture">The image has been successfully saved!</p>
+                <button id="viewCapturesBtn" class="btn btn-primary">View in Gallery</button>
+            </div>
+        </div>
+
+        <div id="successModalRecording" class="modal">
+            <div class="modal-content">
+                <span class="close-success-recordings">&times;</span>
+                <p id="successMessageRecording">The recording has been successfully saved!</p>
+                <button id="viewRecordingsBtn" class="btn btn-primary">View in Gallery</button>
+            </div>
+        </div>
+    </div>
+    <script>
+       
+        var storageUrl = "{{ url_for('storage_page') }}";
+    </script>
+    <script src="../static/script/streaming.js"></script>
+
+</body>
+</html>

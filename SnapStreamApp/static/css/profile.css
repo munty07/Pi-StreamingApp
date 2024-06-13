@@ -1,0 +1,302 @@
+:root {
+    --color-border-hover: #fa698a;
+    --color-border: #cd294f;
+    --color-button-hover: #ff2770;
+    --color-button: #c72f62;
+    --color-error: #d43f3a;
+    --color-alert: #e2054f;
+    --color-bg: #191d2b;
+    --color-modal: #2c303a;
+    --color-info: #6a6f7d;
+    --color-text: #fff;
+    --color-opacity: rgba(0, 0, 0, 0.8);
+    --color-btn: rgba(255, 255, 255, 0.8);
+    --color-black: #000;
+    --color-menu-hover: #3c414f;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    margin: 0;
+    padding: 0; 
+    overflow-x: hidden; 
+}
+
+a{
+    text-decoration: none;
+    color: var(--color-button);
+}
+
+h1{
+    text-align: center;
+}
+
+.container {
+    max-width: 500px;
+    background-color: var(--color-modal);
+    padding: 20px 100px;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+.profile-info {
+    text-align: center;
+}
+
+.user-avatar {
+    position: relative;
+    display: inline-block;
+    transition: opacity 0.5s ease;
+}
+
+.user-avatar img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    transition: opacity 0.5s ease;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.info-item .col {
+    flex: 1;
+}
+
+.info-item label {
+    margin-right: 10px;
+}
+
+.info-item .edit-icon {
+    color: var(--color-button);
+    cursor: pointer;
+}
+
+.btn-save,
+.btn-cancel {
+    background-color: var(--color-button);
+    color: var(--color-text);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+} 
+
+/* .save-btn {
+    position: absolute;
+    padding: 10px;
+    font-size: 24px;
+    border: none;
+    border-radius: 50%;
+    background-color:  var(--color-btn);
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    bottom: 20px;
+    right: calc(50% - 40px);
+    z-index: 3; 
+}*/
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    font-size: 35px;
+    color: var(--color-text);
+    border: none;
+    background: transparent;
+    z-index: 2;
+    cursor: pointer;
+} */
+
+.btn-save:hover,
+.btn-cancel:hover {
+    background-color: var(--color-button-hover);
+}
+
+#updateMessage {
+    margin-top: 10px;
+    color: var(--color-text);
+}
+
+.save-icon,
+.cancel-icon {
+    color: var(--color-text);
+    border: none;
+    padding: 5px 7px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.save-icon:hover,
+.cancel-icon:hover,
+.edit-icon:hover {
+    color: var(--color-button-hover);
+}
+
+input{
+    background: transparent;
+    border: none;
+    outline: none;
+    color:  var(--color-text);
+    font-weight: 600; 
+    text-align: center;
+    padding-right: 20px;
+}
+
+input:focus{
+    color: var(--color-button-hover);
+}
+
+.error {
+    border-color: var(--color-error) !important;
+    color: var(--color-error) !important;
+}
+
+.error-icon {
+    position: absolute;
+    display: none;
+	font-size: 13px;
+    cursor: pointer; 
+
+    padding: 3px 7px;
+    right: 160px;
+}
+
+.error-icon i {
+    color: var(--color-error);
+    font-size: 1.2em;
+}
+
+/* OVERLAY BUTTONS */
+.overlay-buttons {
+    display: none;
+    position: absolute;
+    top: 35%;
+    left: 10%;
+}
+
+.user-avatar:hover .overlay-buttons {
+    display: block;
+}
+.user-avatar:hover img {
+    opacity: 0.5;
+}
+
+.btn-overlay { 
+    background-color: var(--color-button);
+    border: none;
+    color: var(--color-text);
+    border-radius: 50%;
+    padding: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    position: relative;
+}
+
+.btn-overlay:hover {
+    background-color: var(--color-button-hover);
+    border-color: var(--color-button);
+    color: var(--color-text);
+}
+
+#previewOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-opacity);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+#imagePreview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+}
+
+.save-btn {
+    position: absolute;
+    padding: 10px;
+    font-size: 24px;
+    border: none;
+    border-radius: 50%;
+    background-color:  var(--color-btn);
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    bottom: 20px;
+    right: calc(50% - 40px); 
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    font-size: 35px;
+    color: var(--color-text);
+    border: none;
+    background: transparent;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.save-btn:hover,
+.close-btn:hover {
+    color: var(--color-button-hover);
+}
+
+/* CHANGE PASSWORD */
+#changePasswordLink{
+    color: var(--color-button);
+    text-decoration: underline;
+}
+
+#changePasswordLink:hover{
+    color: var(--color-button-hover);
+}
+
+.alert-success {
+    background-color: var(--color-button-hover); 
+    border-color: var(--color-button-hover); 
+    color: var(--color-text); 
+}
+.alert-danger {
+    background-color: var(--color-alert); 
+    border-color: var(--color-error);
+    color: var(--color-text); 
+}
+.alert {
+    border-radius: 5px; 
+    padding: 15px; 
+    margin-top: 10px;
+}
