@@ -1,4 +1,134 @@
 $(document).ready(function () {
+    // CAMERA SECTION
+    function loadCameras() {
+        $.ajax({
+            url: '/get_cameras',
+            type: 'GET',
+            success: function (allCameras) {
+                if (Array.isArray(allCameras)) {
+                    var cameraList = $('#cameraList');
+                    cameraList.empty();
+
+                    $.ajax({
+                        url: '/get_user_cameras',
+                        type: 'GET',
+                        success: function (userCameras) {
+                            if (Array.isArray(userCameras)) {
+                                allCameras.forEach(function (camera) {
+                                    var isChecked = userCameras.includes(camera);
+                                    var checkboxHtml = `
+                                        <label>
+                                            <input type="checkbox" name="cameras" value="${camera}" ${isChecked ? 'checked' : ''} disabled>
+                                            ${camera}
+                                        </label>
+                                    `;
+                                    cameraList.append(checkboxHtml);
+                                });
+                            } else {
+                                console.error('Expected an array but got:', userCameras);
+                            }
+                        },
+                        error: function (error) {
+                            console.error('Error fetching user cameras:', error);
+                        }
+                    });
+                } else {
+                    console.error('Expected an array but got:', allCameras);
+                }
+            },
+            error: function (error) {
+                console.error('Error fetching cameras:', error);
+            }
+        });
+    }
+
+    loadCameras();
+
+
+
+    $('.edit-icon[data-field="camera"]').click(function () {
+        $(this).hide();
+        $('.save-icon[data-field="camera"], .cancel-icon[data-field="camera"]').show();
+        $('#cameraList input[type="checkbox"]').removeAttr('disabled');
+    });
+
+    $('.cancel-icon[data-field="camera"]').click(function () {
+        $(this).hide();
+        errorIcon.hide();
+        errorIcon.removeAttr('title');
+        $('.save-icon[data-field="camera"]').hide();
+        $('.edit-icon[data-field="camera"]').show();
+        $('#cameraList input[type="checkbox"]').attr('disabled', 'disabled');
+        loadCameras();
+    });
+
+    var errorIcon = $('.error-icon[data-field="camera"]');
+    var $saveIcon = $('.save-icon[data-field="camera"]');
+
+    function checkSelectedCameras(initialCheck = false) {
+        var selectedCameras = $('#cameraList input[type="checkbox"]:checked').length;
+        var checkboxesDisabled = $('#cameraList input[type="checkbox"]').is(':disabled');
+
+        if (selectedCameras === 0 && !initialCheck && !checkboxesDisabled) {
+            errorIcon.show();
+            errorIcon.attr('title', 'Please select at least one camera to save.');
+            $saveIcon.prop('disabled', true);
+            $saveIcon.css('cursor', 'not-allowed');
+            $saveIcon.attr('title', 'Please select at least one camera.');
+        } else {
+            errorIcon.hide();
+            errorIcon.removeAttr('title');
+            $saveIcon.prop('disabled', false);
+            $saveIcon.css('cursor', 'pointer');
+            $saveIcon.attr('title', 'Save');
+        }
+    }
+
+    // Initial check
+    checkSelectedCameras(true);
+
+    // Add change event listener to checkboxes
+    $('#cameraList').on('change', 'input[type="checkbox"]', function () {
+        checkSelectedCameras();
+    });
+
+    $('.save-icon[data-field="camera"]').click(function () {
+        var selectedCameras = [];
+        $('#cameraList input[type="checkbox"]:checked').each(function () {
+            selectedCameras.push($(this).val());
+        });
+
+        if (selectedCameras.length === 0) {
+            errorIcon.show();
+            errorIcon.attr('title', 'Please select at least one camera to save.');
+            return;
+        } else {
+            errorIcon.hide();
+            errorIcon.removeAttr('title');
+        }
+
+        $.ajax({
+            url: '/update_user_cameras',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ cameras: selectedCameras }),
+            success: function (response) {
+                console.log('Cameras updated successfully');
+                loadCameras();
+                $('.save-icon[data-field="camera"], .cancel-icon[data-field="camera"]').hide();
+                $('.edit-icon[data-field="camera"]').show();
+            },
+            error: function (error) {
+                console.error('Error updating cameras:', error);
+            }
+        });
+    });
+
+
+
+    // END CAMERAS SECTION
+
+
 
     //  EDIT PROFILE DATA
     $('.edit-icon').click(function () {

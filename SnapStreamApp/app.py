@@ -64,7 +64,6 @@ def register():
     regPhone = request.form['regPhone'].strip()
     regCameras = request.form['regCamera'].split(',')
 
-    print("Name", regName)
     print("Selected Cameras", regCameras)
 
     try:
@@ -74,9 +73,8 @@ def register():
         db.child("Users").child(uid).set(data)
 
         user_cameras = {}
-        for camera in regCameras:
-            camera_ip = db.child("Cameras").child(camera).get().val()
-            user_cameras[camera] = camera_ip
+        for index, camera in enumerate(regCameras):
+            user_cameras[str(index)] = camera
         
         db.child("UsersCameras").child(uid).set(user_cameras)
 
@@ -87,6 +85,7 @@ def register():
         print(e)
 
         return jsonify({'success': False, 'message': 'An account with this email address already exists. Please use a different email.'})
+
 
 # get list of cameras
 @app.route('/get_cameras', methods=['GET'])
@@ -241,10 +240,6 @@ def upload_manual_video():
         print('Failed to upload video:', str(e))
         return jsonify({"error": "Failed to process the upload"}), 500
 
-
-#######################################################################
-############################ STORAGE PAGE ############################# 
-#######################################################################
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
     if 'user' not in session:
@@ -280,10 +275,11 @@ def upload_image():
     os.remove(temp_path)
     return jsonify({"message": "The image has been successfully saved!"})
 
-# def allowed_file(filename):
-#     ALLOWED_EXTENSIONS = {'mp4', 'webm', 'ogg'}
-#     return '.' in filename and \
-#            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+#######################################################################
+############################ STORAGE PAGE ############################# 
+#######################################################################
 
 # storage
 @app.route('/storage')
@@ -314,7 +310,7 @@ def get_images():
 
     images = []
     for camera in user_cameras.each():
-        camera_name = camera.key()
+        camera_name = camera.val()  # Accesăm valoarea camerei
 
         if selected_camera != 'all' and camera_name != selected_camera:
             continue
@@ -323,14 +319,14 @@ def get_images():
 
         if images_details.val():
             for image in images_details.each():
-                image_data = image.val()['details']
-                storage_path = image_data['storage_path']
+                image_data = image.val().get('details', {})
+                storage_path = image_data.get('storage_path')
                 size = image_data.get('size', 'N/A')  
-                timestamp = image_data.get('timestamp', 'N/A') 
+                timestamp = image_data.get('timestamp', 'N/A')
                 try:
                     image_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
                 except ValueError:
-                    continue 
+                    continue
 
                 url = storage.child(storage_path).get_url(None)
                 unique_id = image.key()
@@ -352,10 +348,11 @@ def get_images():
                         'timestamp': timestamp,
                         'unique_id': unique_id,
                         'storage_path': storage_path,
-                        'camera_name': camera_name
+                        'camera_name': camera_name  
                     })
 
     return jsonify(images)
+
 
 
 @app.route('/get_autoimages')
@@ -369,11 +366,11 @@ def get_autoimages():
 
     user_cameras = db.child("UsersCameras").child(user_id).get()
     if not user_cameras.val():
-        return jsonify([])  # Nu sunt camere asociate
+        return jsonify([])  
 
     images = []
     for camera in user_cameras.each():
-        camera_name = camera.key()
+        camera_name = camera.val()  
 
         if selected_camera != 'all' and camera_name != selected_camera:
             continue
@@ -382,6 +379,10 @@ def get_autoimages():
         if images_details.val():
             for image in images_details.each():
                 image_data = image.val()['details']
+                user_list = image.val().get('users', {})  
+                if user_id not in user_list:
+                    continue 
+
                 storage_path = image_data['storage_path']
                 size = image_data.get('size', 'N/A')
                 timestamp = image_data.get('timestamp', 'N/A')
@@ -417,7 +418,6 @@ def get_autoimages():
 
 
 
-
 @app.route('/get_videos')
 def get_videos():
     if 'user' not in session:
@@ -433,7 +433,7 @@ def get_videos():
 
     videos = [] 
     for camera in user_cameras.each():
-        camera_name = camera.key()
+        camera_name = camera.val()
 
         if selected_camera != 'all' and camera_name != selected_camera:
             continue
@@ -441,8 +441,8 @@ def get_videos():
         video_details = db.child("UserCaptures").child("LiveRecordings").child(user_id).child(camera_name).get()
         if video_details.val():
             for video in video_details.each():
-                video_data = video.val()['details']
-                storage_path = video_data['storage_path']
+                video_data = video.val().get('details', {})
+                storage_path = video_data.get('storage_path')
                 size = video_data.get('size', 'N/A')  
                 timestamp = video_data.get('timestamp', 'N/A')  
                 try:
@@ -491,7 +491,7 @@ def get_autovideos():
     
     videos = [] 
     for camera in user_cameras.each():
-        camera_name = camera.key()
+        camera_name = camera.val()
 
         if selected_camera != 'all' and camera_name != selected_camera:
             continue
@@ -500,14 +500,18 @@ def get_autovideos():
 
         if video_details.val():
             for video in video_details.each():
-                video_data = video.val()['details']
-                storage_path = video_data['storage_path']
+                video_data = video.val().get('details', {})
+                users_list = video.val().get('users', [])
+                storage_path = video_data.get('storage_path')
                 size = video_data.get('size', 'N/A')  
                 timestamp = video_data.get('timestamp', 'N/A')  
                 try:
                     video_date = datetime.strptime(timestamp, "%d %b %Y %H:%M:%S").strftime("%Y-%m-%d")
                 except ValueError:
                     continue 
+
+                if user_id not in users_list:
+                    continue
 
                 url = storage.child(storage_path).get_url(None)
                 unique_id = video.key()
@@ -520,7 +524,8 @@ def get_autovideos():
                             'timestamp': timestamp,
                             'unique_id': unique_id,
                             'storage_path': storage_path,
-                            'camera_name': camera_name  
+                            'camera_name': camera_name,
+                            'users': users_list
                         })
                 else:
                     videos.append({
@@ -529,10 +534,12 @@ def get_autovideos():
                         'timestamp': timestamp,
                         'unique_id': unique_id,
                         'storage_path': storage_path,
-                        'camera_name': camera_name  
+                        'camera_name': camera_name,
+                        'users': users_list
                     })
 
     return jsonify(videos)
+
 
 
 ##########################################################
@@ -557,6 +564,7 @@ def delete_image():
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
     
+
 # delete auto live captures
 @app.route('/delete_autoimage', methods=['POST'])
 def delete_autoimage():
@@ -569,9 +577,25 @@ def delete_autoimage():
     camera_name = data.get('camera_name')
 
     try:
-        db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).child(unique_id).remove()
+        image_data = db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).child(unique_id).get().val()
 
-        return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
+        if not image_data:
+            return jsonify({'status': 'error', 'message': 'Image not found'}), 404
+
+        users_list = image_data.get('users', [])
+
+        if user_id in users_list:
+            users_list.remove(user_id)
+            
+            if not users_list:
+                db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).child(unique_id).remove()
+            else:
+                db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).child(unique_id).update({'users': users_list})
+
+            return jsonify({'status': 'success', 'message': 'Image deleted successfully'})
+        else:
+            return jsonify({'status': 'error', 'message': 'User not found in image data'}), 404
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete image: {}'.format(str(e))}), 500
 
@@ -595,6 +619,7 @@ def delete_video():
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete video: {}'.format(str(e))}), 500
     
+
 # delete auto live recordings
 @app.route('/delete_autovideo', methods=['POST'])
 def delete_autovideo():
@@ -607,11 +632,32 @@ def delete_autovideo():
     camera_name = data.get('camera_name')
 
     try:
-        db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).child(unique_id).remove()
+        # Accesează detaliile videoclipului
+        video_data = db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).child(unique_id).get().val()
 
-        return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
+        if not video_data:
+            return jsonify({'status': 'error', 'message': 'Video not found'}), 404
+
+        # Accesează lista de utilizatori
+        users_list = video_data.get('users', [])
+
+        if user_id in users_list:
+            users_list.remove(user_id)
+            
+            # Dacă lista de utilizatori este goală după ștergere, șterge întreaga înregistrare
+            if not users_list:
+                db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).child(unique_id).remove()
+            else:
+                # Actualizează lista de utilizatori în Firebase
+                db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).child(unique_id).update({'users': users_list})
+
+            return jsonify({'status': 'success', 'message': 'Video deleted successfully'})
+        else:
+            return jsonify({'status': 'error', 'message': 'User not found in video data'}), 404
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to delete video: {}'.format(str(e))}), 500
+
 
 #######################################################################
 ############################ PROFILE PAGE ############################# 
@@ -716,6 +762,114 @@ def get_profile_picture():
     return redirect('/static/img/avatar.jpg')
 
 
+@app.route('/update_user_cameras', methods=['POST'])
+def update_user_cameras():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not authenticated"}), 403
+
+    user_id = session['user_id']
+    data = request.get_json()
+    selected_cameras = data.get('cameras', [])
+
+    try:
+        # Fetch current cameras of the user
+        current_cameras = db.child("UsersCameras").child(user_id).get().val()
+        current_cameras = [camera for camera in current_cameras] if current_cameras else []
+
+        # Identify cameras to be added and removed
+        cameras_to_add = [camera for camera in selected_cameras if camera not in current_cameras]
+        cameras_to_remove = [camera for camera in current_cameras if camera not in selected_cameras]
+
+        # Update UsersCameras
+        user_cameras = {idx: camera for idx, camera in enumerate(selected_cameras)}
+        db.child("UsersCameras").child(user_id).set(user_cameras)
+
+        # Update AutoLiveRecordings and AutoLiveCaptures
+        for camera in cameras_to_add:
+            recordings = db.child("UserCaptures").child("AutoLiveRecordings").child(camera).get().each()
+            captures = db.child("UserCaptures").child("AutoLiveCaptures").child(camera).get().each()
+
+            if recordings:
+                for recording in recordings:
+                    recording_key = recording.key()
+                    recording_data = recording.val()
+                    users_list = recording_data.get("users", [])
+                    if user_id not in users_list:
+                        users_list.append(user_id)
+                        db.child("UserCaptures").child("AutoLiveRecordings").child(camera).child(recording_key).update({"users": users_list})
+
+            if captures:
+                for capture in captures:
+                    capture_key = capture.key()
+                    capture_data = capture.val()
+                    users_list = capture_data.get("users", [])
+                    if user_id not in users_list:
+                        users_list.append(user_id)
+                        db.child("UserCaptures").child("AutoLiveCaptures").child(camera).child(capture_key).update({"users": users_list})
+
+        for camera in cameras_to_remove:
+            recordings = db.child("UserCaptures").child("AutoLiveRecordings").child(camera).get().each()
+            captures = db.child("UserCaptures").child("AutoLiveCaptures").child(camera).get().each()
+
+            if recordings:
+                for recording in recordings:
+                    recording_key = recording.key()
+                    recording_data = recording.val()
+                    users_list = recording_data.get("users", [])
+                    if user_id in users_list:
+                        users_list.remove(user_id)
+                        db.child("UserCaptures").child("AutoLiveRecordings").child(camera).child(recording_key).update({"users": users_list})
+
+            if captures:
+                for capture in captures:
+                    capture_key = capture.key()
+                    capture_data = capture.val()
+                    users_list = capture_data.get("users", [])
+                    if user_id in users_list:
+                        users_list.remove(user_id)
+                        db.child("UserCaptures").child("AutoLiveCaptures").child(camera).child(capture_key).update({"users": users_list})
+
+        # Update LiveCaptures and LiveRecordings
+        live_captures = db.child("UserCaptures").child("LiveCaptures").child(user_id).get().val()
+        live_recordings = db.child("UserCaptures").child("LiveRecordings").child(user_id).get().val()
+
+        if live_captures:
+            for camera in cameras_to_remove:
+                if camera in live_captures:
+                    db.child("UserCaptures").child("LiveCaptures").child(user_id).child(camera).remove()
+
+        if live_recordings:
+            for camera in cameras_to_remove:
+                if camera in live_recordings:
+                    db.child("UserCaptures").child("LiveRecordings").child(user_id).child(camera).remove()
+
+
+        return jsonify({"success": "Cameras updated successfully"}), 200
+    except Exception as e:
+        print("Error updating user cameras in Firebase:", e)
+        return jsonify({"error": "An error occurred while updating user cameras"}), 500
+
+
+
+
+
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    email = request.form.get('email')
+
+    try:
+        auth.send_password_reset_email(email)
+        message = 'Check your email for the password reset link.'
+        alert_class = 'success'
+    except:
+        message = 'Error sending the password reset email.'
+        alert_class = 'danger'
+
+    return jsonify({'message': message, 'alert_class': alert_class})
+
+
+###################################################################
+
 @app.route('/get_user_cameras', methods=['GET'])
 def get_user_cameras():
     if 'user_id' not in session:
@@ -727,7 +881,7 @@ def get_user_cameras():
         cameras_data = db.child("UsersCameras").child(user_id).get().val()
         
         if cameras_data:
-            cameras = list(cameras_data.keys())
+            cameras = [camera for camera in cameras_data]
             return jsonify(cameras), 200
         else:
             return jsonify({"error": "No cameras found for this user"}), 404
@@ -753,21 +907,6 @@ def get_camera_ip():
         return jsonify({"error": "An error occurred while retrieving camera IP"}), 500
 
 
-
-@app.route('/change_password', methods=['POST'])
-def change_password():
-    email = request.form.get('email')
-
-    try:
-        auth.send_password_reset_email(email)
-        message = 'Check your email for the password reset link.'
-        alert_class = 'success'
-    except:
-        message = 'Error sending the password reset email.'
-        alert_class = 'danger'
-
-    return jsonify({'message': message, 'alert_class': alert_class})
-
 # After updated the name in DB
 def update_username_in_session(new_username):
     if 'user' in session:
@@ -782,6 +921,7 @@ def inject_username():
     else:
         return dict(username=None)
 
+
 # logout function
 @app.route('/logout')
 def logout():
@@ -789,21 +929,9 @@ def logout():
     return redirect('/')
 
 
-# @app.route('/fetch_image', methods=['POST'])
-# def fetch_image():
-#     image_url = request.json['url']
-#     try:
-#         response = requests.get(image_url)
-#         response.raise_for_status()
-#         return jsonify({"image_data": base64.b64encode(response.content).decode('utf-8')})
-#     except requests.RequestException as e:
-#         return jsonify({"error": str(e)}), 500
-
-
-
 if __name__ == "__main__":
     try:
-        app.run(debug=True, use_reloader=False)#, port=5001)
+        app.run(debug=True, use_reloader=False)
     except KeyboardInterrupt:
         pass
     finally:

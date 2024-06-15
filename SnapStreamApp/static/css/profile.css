@@ -83,6 +83,26 @@ h1{
     margin-right: 10px;
 }
 
+/* checkbox */
+
+.checkbox-container {
+    display: ruby-text;
+}
+
+.checkbox-container label {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+
+/* end checkbox */
+
+
 .info-item .edit-icon {
     color: var(--color-button);
     cursor: pointer;
@@ -99,20 +119,6 @@ h1{
     margin-top: 10px;
 } 
 
-/* .save-btn {
-    position: absolute;
-    padding: 10px;
-    font-size: 24px;
-    border: none;
-    border-radius: 50%;
-    background-color:  var(--color-btn);
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-    bottom: 20px;
-    right: calc(50% - 40px);
-    z-index: 3; 
-}*/
-
 .close-btn {
     position: absolute;
     top: 10px;
@@ -123,7 +129,7 @@ h1{
     background: transparent;
     z-index: 2;
     cursor: pointer;
-} */
+} 
 
 .btn-save:hover,
 .btn-cancel:hover {
@@ -169,14 +175,18 @@ input:focus{
     color: var(--color-error) !important;
 }
 
+.error-icon[data-field="camera"] {
+    margin-top: -40px;
+}
+
 .error-icon {
     position: absolute;
     display: none;
 	font-size: 13px;
     cursor: pointer; 
-
+    margin-right: 40px;
     padding: 3px 7px;
-    right: 160px;
+    right: 0;
 }
 
 .error-icon i {

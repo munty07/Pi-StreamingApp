@@ -69,8 +69,6 @@ window.onload = function () {
     var isRecording = false;
     var mediaRecorder;
     var recordedBlobs;
-    // var canvas = document.getElementById("videoCanvas");
-    // var ctx = canvas.getContext("2d");
 
     var videoFeed = document.getElementById("videoFeed");
 

@@ -54,7 +54,7 @@ recording = False
 no_person_detected_timer = 0
 out = None
 stop_flag = threading.Event()
-camera_name = "Camera3"
+camera_name = "Camera2"
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 fullbody_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fullbody.xml')
@@ -215,13 +215,28 @@ def upload_auto_video(video_path):
         try:
             date_time = datetime.now().strftime("%d %b %Y %H:%M:%S")
             file_size_in_mb = os.path.getsize(video_path) / (1024 * 1024)
+
+            # camera_users = db.child("UsersCameras").order_by_child(camera_name).get()
+            # user_list = [user.key() for user in camera_users.each() if user.val() and camera_name in user.val()]
+
+            user_cameras = db.child("UsersCameras").get()
+            user_list = []
+            for user in user_cameras.each():
+                user_id = user.key()
+                user_cameras_list = user.val()
+                if camera_name in user_cameras_list:
+                    user_list.append(user_id)  
+
+            indexed_user_list = {str(index): user for index, user in enumerate(user_list)}
+
             db.child("UserCaptures").child("AutoLiveRecordings").child(camera_name).push({
                 "details": {
                     "timestamp": date_time,
                     "size":  f"{file_size_in_mb:.2f} MB",
                     "filename": filename,
                     "storage_path": f"{storage_path}/{filename}"
-                }
+                },
+                "users": indexed_user_list
             })
             print('The recording has been successfully saved in the database!')
         except Exception as e:
@@ -229,24 +244,17 @@ def upload_auto_video(video_path):
             return jsonify({"error": "Failed to save to Firebase Database"}), 500
 
         try:
-            camera_users = db.child("UsersCameras").get()
             email_list = []
+            for user_id in user_list:
+                user_info = db.child("Users").child(user_id).get().val()
+                if user_info and 'email' in user_info:
+                    email_list.append(user_info['email'])
 
-            for user in camera_users.each():
-                user_id = user.key()
-                user_cameras = user.val()
-
-                if camera_name in user_cameras:
-                    user_info = db.child("Users").child(user_id).get().val()
-                    if user_info and 'email' in user_info:
-                        email_list.append(user_info['email'])
-            
             print("Emails: ", email_list)
            
             if email_list:
-                send_email(video_path, email_list)
+                # send_email(video_path, email_list)
                 print("Message sent!")
-
         except Exception as e:
             print("Error sending email:", e)
             return jsonify({"error": "Email sending failed..."}), 500
@@ -279,13 +287,24 @@ def capture_and_upload_image(frame):
         storage.child(storage_path).put(temp_path)
         file_size_in_mb = os.path.getsize(temp_path) / (1024 * 1024)
 
+        user_cameras = db.child("UsersCameras").get()
+        user_list = []
+        for user in user_cameras.each():
+            user_id = user.key()
+            user_cameras_list = user.val()
+            if camera_name in user_cameras_list:
+                user_list.append(user_id)  
+
+        indexed_user_list = {str(index): user for index, user in enumerate(user_list)}
+
         db.child("UserCaptures").child("AutoLiveCaptures").child(camera_name).child(unique_id).set({
             "details": {
                 "timestamp": date_time,
                 "size":  f"{file_size_in_mb:.2f} MB",
                 "filename": unique_filename,
                 "storage_path": storage_path
-            }
+            },
+            "users": indexed_user_list  
         })
 
         os.remove(temp_path)
@@ -294,6 +313,7 @@ def capture_and_upload_image(frame):
 
     except Exception as e:
         print("An error occurred while capturing and uploading the image:", e)
+
 
 
 def allowed_file(filename):
